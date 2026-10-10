@@ -1,0 +1,5 @@
+body { margin: 0; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
+#app { height: 100vh; }
+.page-card { margin-bottom: 16px; }
+.page-title { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+.page-desc { color: #909399; font-size: 13px; margin: 0 0 16px; }
