@@ -1,0 +1,25 @@
+services:
+  app:
+    image: ghcr.io/chen-zc6615/resume_assistant:${IMAGE_TAG:-latest}
+    container_name: resume-assistant
+    restart: unless-stopped
+
+    init: true
+
+    env_file:
+      - .env
+
+    ports:
+      - "127.0.0.1:18085:8000"
+
+    volumes:
+      - ./data:/app/data
+
+    mem_limit: 1500m
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+

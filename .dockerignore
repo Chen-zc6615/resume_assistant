@@ -1,17 +1,36 @@
-.venv/
-.git/
-.idea/
-.vscode/
-__pycache__/
+# Git
+.git
+.github
+
+# Python
+.venv
+__pycache__
 *.pyc
-.pytest_cache/
-.ruff_cache/
-data/
+.pytest_cache
+.ruff_cache
+*.egg-info
+
+# Secrets
 .env
-src/web/node_modules/
-src/web/dist/
-tests/
-evals/
-agents/
-.githooks/
-specs/
+.env.*
+
+# Runtime data
+data
+*.db
+*.db-wal
+*.db-shm
+
+# Frontend
+src/web/node_modules
+src/web/dist
+
+# Development files
+tests
+evals
+specs
+.agents
+.githooks
+
+# Editors
+.idea
+.vscode
