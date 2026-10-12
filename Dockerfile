@@ -1,19 +1,20 @@
-FROM node:24 AS frontend-builder
+FROM node:24-alpine AS frontend-builder
 WORKDIR /build
 COPY src/web/package.json src/web/package-lock.json ./
 RUN npm ci
 COPY src/web/ ./
 RUN npm run build
 
-FROM python:3.12 AS application
+FROM python:3.12-slim AS application
+ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY pyproject.toml ./
 COPY main.py ./
 COPY src ./src
-RUN pip install --no-cache-dir
+RUN pip install --no-cache-dir .
 COPY --from=frontend-builder /build/dist ./src/web/dist
-RUN mkdir -p /app/date/uploads
+RUN mkdir -p /app/data/uploads
 EXPOSE 8000
 HEALTHCHECK \
 	--interval=30s \
