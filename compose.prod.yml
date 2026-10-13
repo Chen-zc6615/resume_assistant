@@ -3,6 +3,8 @@ services:
     image: ghcr.io/chen-zc6615/resume_assistant:postgres-17-alpine
     container_name: resume-assistant-db
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:15432:5432"
 
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
