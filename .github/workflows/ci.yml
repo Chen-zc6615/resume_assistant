@@ -18,6 +18,24 @@ jobs:
         name: backend tests
         runs-on: ubuntu-latest
         timeout-minutes: 10
+
+        services:
+            postgres:
+                image: postgres:17-alpine
+                env:
+                    POSTGRES_USER: resume_test
+                    POSTGRES_PASSWORD: resume_test
+                    POSTGRES_DB: resume_test
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd "pg_isready -U resume_test -d resume_test"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+        env:
+            DATABASE_URL: postgresql+psycopg://resume_test:resume_test@127.0.0.1:5432/resume_test
         
         steps:
             - name: Checkout repository

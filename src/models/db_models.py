@@ -25,9 +25,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base
 
-# SQLite 仅对 INTEGER PRIMARY KEY 启用 rowid 自增，BIGINT 不生效；
-# 定义跨库兼容的自增主键类型。
-IntPK = BigInteger().with_variant(Integer, "sqlite")
+# PostgreSQL 使用 BIGINT 自增主键。
+IntPK = BigInteger()
 
 
 class TimestampMixin:
