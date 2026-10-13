@@ -22,3 +22,6 @@ src/web/dist/
 # IDE
 .idea/
 .vscode/
+
+# Local deployment credentials and server notes
+服务器与大模型配置帮助文档.md

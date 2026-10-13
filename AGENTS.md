@@ -21,7 +21,7 @@ src/api/        路由暴露层（FastAPI，参数校验后调 services）
 src/services/   业务逻辑与状态机（upload/parse/normalize/screen/pipeline）
 src/models/     ORM（db_models）与 Pydantic 契约（schemas）
 src/core/       配置、安全、日志
-src/db/         引擎与会话（SQLite WAL）
+src/db/         引擎与会话（PostgreSQL）
 src/web/        Vue3 + Element Plus 前端（独立 npm 项目）
 ```
 

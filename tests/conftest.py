@@ -10,7 +10,10 @@ import tempfile
 
 _TMP = tempfile.mkdtemp(prefix="smartresume_test_")
 os.environ.setdefault("DATA_DIR", _TMP)
-os.environ.setdefault("DB_PATH", os.path.join(_TMP, "test.db"))
+os.environ.setdefault(
+    "DATABASE_URL",
+    "postgresql+psycopg://resume_test:resume_test@127.0.0.1:55432/resume_test",
+)
 os.environ.setdefault("UPLOAD_DIR", os.path.join(_TMP, "uploads"))
 
 # 黄金数据集路径

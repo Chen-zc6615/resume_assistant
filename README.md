@@ -4,7 +4,7 @@
 
 ## 架构
 
-- **后端**：Python + FastAPI + Pydantic v2 + SQLAlchemy（SQLite WAL）
+- **后端**：Python + FastAPI + Pydantic v2 + SQLAlchemy（PostgreSQL）
 - **前端**：Vue3 + TypeScript + Element Plus + Vite
 - **大模型**：通义千问 DashScope（qwen-plus 归一化提取；qwen-vl-max 扫描件 OCR）
 - **PDF 解析**：PyMuPDF → pdfplumber → OCR 三级兜底
@@ -29,10 +29,16 @@ tests/          单测 + 集成测试
 
 ```bash
 cp .env.example .env
-# 编辑 .env 填入 DASHSCOPE_API_KEY
+# 编辑 .env，设置 PostgreSQL 密码并填入 DASHSCOPE_API_KEY
 ```
 
-### 2. 启动后端（:8000）
+### 2. 启动 PostgreSQL
+
+```bash
+docker compose up -d db
+```
+
+### 3. 启动后端（:8000）
 
 ```bash
 .venv/Scripts/python.exe -m uvicorn src.app:create_app --factory --reload
@@ -40,7 +46,7 @@ cp .env.example .env
 
 Swagger 文档：http://127.0.0.1:8000/docs
 
-### 3. 启动前端（:5173，已代理 /api）
+### 4. 启动前端（:5173，已代理 /api）
 
 ```bash
 cd src/web
@@ -48,9 +54,10 @@ npm install
 npm run dev
 ```
 
-### 4. 测试
+### 5. 测试
 
 ```bash
+docker compose up -d db-test
 .venv/Scripts/python.exe -m pytest tests/ -v
 ```
 
