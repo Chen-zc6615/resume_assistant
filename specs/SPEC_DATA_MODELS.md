@@ -2,7 +2,7 @@
 
 > 来源：《6〈技术SPEC架构说明书〉.docx》+ PRD 数据库表图。列名以 snake_case 为准（PRD 图中驼峰命名如 job_minDegree 统一为 job_min_degree）。
 
-## 一、数据库表（SQLite，WAL 模式）
+## 一、数据库表（PostgreSQL）
 
 ORM 定义：`src/models/db_models.py`（15 张表）
 
@@ -76,7 +76,7 @@ ORM 定义：`src/models/db_models.py`（15 张表）
 
 **当前实现（MVP，保留）**：SQL 集合取数（按 status 过滤候选集）→ 应用层规则引擎逐条判定（`evaluate_profile`）→ 三态结果 + 逐条 reasons 明细。
 
-**为何不是纯 SQL WHERE**：三态判定（信息不足→待复核）、技能模糊/别名匹配（rapidfuzz，SQLite 无 fuzzy 函数）、逐条可解释 reasons，这三项是需求红线（S02/S03 用例），纯 SQL 表达会引入嵌套 CASE WHEN 与双份逻辑漂移。
+**为何不是纯 SQL WHERE**：三态判定（信息不足→待复核）、技能模糊/别名匹配（应用层使用 rapidfuzz）、逐条可解释 reasons，这三项是需求红线（S02/S03 用例），纯 SQL 表达会引入嵌套 CASE WHEN 与双份逻辑漂移。
 
 **演进方向（数据量上万时启用）——两阶段混合**：
 1. SQL 粗筛下推：学历（CASE 序映射）、年限（total_work_months 比较）、技能精确匹配（profile_skills EXISTS）直接进 WHERE，利用索引批量缩小候选集；

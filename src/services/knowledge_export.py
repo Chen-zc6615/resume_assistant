@@ -12,8 +12,8 @@
 
 红线：知识库内容只用于 HR 检索/评分参考/排序展示，不回流初筛的淘汰决策。
 
-用法（标准库实现，无第三方依赖）：
-    python -m src.services.knowledge_export [--db data/smartresume.db] [--out data/knowledge_export]
+用法：
+    python -m src.services.knowledge_export [--out data/knowledge_export]
 """
 
 from __future__ import annotations
@@ -21,8 +21,12 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import sqlite3
 from pathlib import Path
+
+from sqlalchemy import text
+from sqlalchemy.engine import Connection
+
+from src.db.session import engine
 
 # resumes.status 标签（与 upload_service.STATUS_LABELS 一致）
 STATUS_LABELS = {
@@ -33,9 +37,13 @@ STATUS_LABELS = {
 RESULT_LABELS = {"PASS": "通过", "REJECT": "不通过", "PENDING_REVIEW": "待复核"}
 
 
-def _rows(db: sqlite3.Connection, sql: str, params: tuple = ()) -> list[dict]:
-    db.row_factory = sqlite3.Row
-    return [dict(r) for r in db.execute(sql, params)]
+def _rows(
+    db: Connection,
+    sql: str,
+    params: dict | None = None,
+) -> list[dict]:
+    result = db.execute(text(sql), params or {})
+    return [dict(row) for row in result.mappings()]
 
 
 def _months_label(months: int | None) -> str:
@@ -44,7 +52,7 @@ def _months_label(months: int | None) -> str:
     return f"{months // 12} 年{months % 12} 个月" if months % 12 else f"{months // 12} 年"
 
 
-def export_talent_profiles(db: sqlite3.Connection, out: Path) -> None:
+def export_talent_profiles(db: Connection, out: Path) -> None:
     """脱敏人才画像：每份归一化简历一篇。"""
     profiles = _rows(
         db,
@@ -62,18 +70,21 @@ def export_talent_profiles(db: sqlite3.Connection, out: Path) -> None:
 
     for p in profiles:
         skills = [r["skill_name"] for r in _rows(
-            db, "SELECT skill_name FROM profile_skills WHERE profile_id=?", (p["profile_id"],)
+            db,
+            "SELECT skill_name FROM profile_skills WHERE profile_id = :profile_id",
+            {"profile_id": p["profile_id"]},
         )]
         works = _rows(
             db,
             "SELECT company, position, start_date, end_date, is_current, description "
-            "FROM work_experiences WHERE profile_id=? ORDER BY start_date DESC",
-            (p["profile_id"],),
+            "FROM work_experiences WHERE profile_id = :profile_id ORDER BY start_date DESC",
+            {"profile_id": p["profile_id"]},
         )
         projects = _rows(
             db,
-            "SELECT project_name, role, description FROM project_experiences WHERE profile_id=?",
-            (p["profile_id"],),
+            "SELECT project_name, role, description "
+            "FROM project_experiences WHERE profile_id = :profile_id",
+            {"profile_id": p["profile_id"]},
         )
         # 各岗最新初筛结果（仅统计在组岗位，口径同 screen_service._merge_and_summarize）
         verdicts = _rows(
@@ -83,10 +94,10 @@ def export_talent_profiles(db: sqlite3.Connection, out: Path) -> None:
             JOIN filter_runs run ON run.run_id = fr.run_id
             JOIN jobs j ON j.job_id = run.job_id
             JOIN job_resume_groups g ON g.job_id = j.job_id AND g.resume_id = fr.resume_id
-            WHERE fr.resume_id = ?
+            WHERE fr.resume_id = :resume_id
             ORDER BY fr.result_id DESC
             """,
-            (p["rid"],),
+            {"resume_id": p["rid"]},
         )
         latest: dict[str, dict] = {}
         for v in verdicts:
@@ -95,8 +106,14 @@ def export_talent_profiles(db: sqlite3.Connection, out: Path) -> None:
         for job_name, v in sorted(latest.items()):
             reason = ""
             try:
-                fails = [x.get("detail", "") for x in json.loads(v["reasons"] or "[]")
-                         if x.get("passed") is False]
+                reasons = v["reasons"] or []
+                if isinstance(reasons, str):
+                    reasons = json.loads(reasons)
+                fails = [
+                    item.get("detail", "")
+                    for item in reasons
+                    if item.get("passed") is False
+                ]
                 reason = fails[0] if fails else "硬性条件全部满足"
             except (ValueError, TypeError, IndexError):
                 pass
@@ -135,7 +152,7 @@ def export_talent_profiles(db: sqlite3.Connection, out: Path) -> None:
         (out / f"{p['talent_id']}.md").write_text("\n".join(lines), encoding="utf-8")
 
 
-def export_job_docs(db: sqlite3.Connection, out: Path) -> None:
+def export_job_docs(db: Connection, out: Path) -> None:
     """岗位 JD 文档：每个岗位一篇（含所属需求与硬性条件）。"""
     jobs = _rows(
         db,
@@ -162,13 +179,12 @@ def export_job_docs(db: sqlite3.Connection, out: Path) -> None:
         (out / f"J{i:02d}_{j['job_name']}.md").write_text("\n".join(lines), encoding="utf-8")
 
 
-def export_all(db_path: str, out_dir: str) -> dict[str, int]:
-    db = sqlite3.connect(db_path)
+def export_all(out_dir: str) -> dict[str, int]:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    export_talent_profiles(db, out / "talent_profiles")
-    export_job_docs(db, out / "job_docs")
-    db.close()
+    with engine.connect() as db:
+        export_talent_profiles(db, out / "talent_profiles")
+        export_job_docs(db, out / "job_docs")
     counts = {
         "talent_profiles": len(list((out / "talent_profiles").glob("*.md"))),
         "job_docs": len(list((out / "job_docs").glob("*.md"))),
@@ -178,10 +194,9 @@ def export_all(db_path: str, out_dir: str) -> dict[str, int]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="知识库沉淀导出")
-    parser.add_argument("--db", default="data/smartresume.db", help="SQLite 库路径")
     parser.add_argument("--out", default="data/knowledge_export", help="输出目录")
     args = parser.parse_args()
-    counts = export_all(args.db, args.out)
+    counts = export_all(args.out)
     for k, v in counts.items():
         print(f"{k}: {v} 篇")
     print(f"输出目录：{args.out}（PII 映射在 index_pii.csv，不入知识库）")

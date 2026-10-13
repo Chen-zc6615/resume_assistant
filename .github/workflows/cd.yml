@@ -52,6 +52,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Mirror PostgreSQL image to GHCR
+        shell: bash
+        run: |
+          docker pull postgres:17-alpine
+          docker tag postgres:17-alpine "${IMAGE_NAME}:postgres-17-alpine"
+          docker push "${IMAGE_NAME}:postgres-17-alpine"
+
       - name: Build and publish image
         uses: docker/build-push-action@v6
         with:

@@ -18,20 +18,10 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    @classmethod
-    def settings_customise_sources(cls, settings_cls, init_settings, env_settings, dotenv_settings, file_secret_settings):
-        """`.env` 文件优先于进程环境变量。
-
-        默认顺序是环境变量 > .env，但 IDE/终端里残留的旧环境变量
-        会静默劫持配置（曾导致有效 key 被 67 位旧值覆盖）。
-        团队约定：密钥以 .env 为唯一真理源。
-        """
-        return (init_settings, dotenv_settings, env_settings, file_secret_settings)
-
     # --- 存储 ---
     data_dir: Path = BASE_DIR / "data"
-    db_path: Path = BASE_DIR / "data" / "smartresume.db"
     upload_dir: Path = BASE_DIR / "data" / "uploads"
+    database_url: str
 
     # --- 上传约束（PRD：仅 PDF，单文件 <5M）---
     max_upload_size_mb: int = 5
@@ -49,10 +39,6 @@ class Settings(BaseSettings):
 
     # --- HR 用户（MVP 无登录，透传）---
     default_hr_id: str = "hr_admin"
-
-    @property
-    def sqlalchemy_url(self) -> str:
-        return f"sqlite:///{self.db_path.as_posix()}"
 
 
 @lru_cache
