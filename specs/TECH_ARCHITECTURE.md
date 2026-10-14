@@ -26,7 +26,7 @@
 
 ## **1\.3 总体架构图**
 
-系统采用 **Vue 前端 \+ FastAPI 后端 \+ SQLite 数据库 \+ 本地文件存储**，通过外部模型服务完成视觉识别与结构化提取。
+系统采用 **Vue 前端 \+ FastAPI 后端 \+ PostgreSQL 数据库 \+ 本地文件存储**，通过外部模型服务完成视觉识别与结构化提取。
 
 ![Image](https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=ZDI0YTM5ZDdiMTQyNGI1MGVjMDg0YjQzNDhlN2Y2ODVfZThkYjQxNWVmYjI3Njc3ZWM0YzQ0NzA3ODhjMTgzNzdfSUQ6NzY5NDg1Nzc4MTYzMTE0Mjg1NF8xNzkxNjE3NzI2OjE3OTE3MDQxMjZfVjM)
 
@@ -55,7 +55,7 @@
 
 ## **2\.2 后端与存储**
 
-后端以 FastAPI 组织 HTTP 入口，使用 SQLAlchemy 管理业务数据，并通过业务服务隔离模型调用、文件处理和初筛判断。当前选择 SQLite 与本地文件目录，是基于单机运行和较低并发量作出的简化。
+后端以 FastAPI 组织 HTTP 入口，使用 SQLAlchemy 管理业务数据，并通过业务服务隔离模型调用、文件处理和初筛判断。结构化业务数据保存到 PostgreSQL，原始 PDF 保存到服务器本地挂载目录；数据库连接由 `DATABASE_URL` 统一配置。
 
 |类别|选型|选型理由|
 |---|---|---|
@@ -63,7 +63,7 @@
 |Web 服务|FastAPI \+ Uvicorn|统一暴露业务接口，支持参数校验、依赖注入和 OpenAPI 文档生成|
 |数据校验|Pydantic v2 \+ JSON Schema|分别约束业务实体和模型输出结构；不把模型返回内容直接视为可信数据|
 |数据访问|SQLAlchemy 2|统一定义实体关系、查询和事务，减少业务模块对具体 SQL 的依赖|
-|数据库|SQLite，启用 WAL|无需独立数据库服务；WAL 适合当前读写并存的单机场景|
+|数据库|PostgreSQL 17 \+ psycopg 3|提供事务、约束和并发访问能力；生产与测试数据库通过 Docker Compose 分别运行|
 |文件存储|本地目录|将原始 PDF 与业务记录分开保存，便于预览、复核和重新解析|
 |后台处理|FastAPI BackgroundTasks|上传请求返回后在应用进程内处理任务，无需另建队列服务|
 |模型接入|OpenAI Python SDK，连接 DashScope 兼容接口|由统一客户端封装文本模型和视觉模型，避免业务模块直接拼接模型请求|
@@ -106,7 +106,7 @@ smart-resume/
 ├── specs/                      # 业务、数据与验收规范
 ├── tests/                      # 单元与集成测试
 ├── evals/                      # 验收样本
-├── data/                       # SQLite 与原始 PDF 的运行时目录
+├── data/                       # 原始 PDF 等本地运行时文件目录
 ├── pyproject.toml              # 后端依赖与工程配置
 └── README.md                   # 项目说明
 ```

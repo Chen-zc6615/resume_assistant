@@ -1,4 +1,4 @@
-# 功能三 简历归一化
+# 功能四 简历归一化
 
 版本：v1.0 草案｜日期：2026-10-09。
 
@@ -47,7 +47,7 @@
 
 输入仅为解析文本及固定字段规则，输出仅为结构化 JSON。以 Pydantic 生成的 JSON Schema 为权威校验来源，随后执行跨字段校验和来源核对；格式通过不能代替事实正确。
 
-状态为 parsed → normalizing → normalized 或 normalize_failed。网络暂时异常、JSON 无效或校验失败可最多重试两次；超过配置超时或最终失败记录原因，保留原文进入人工队列。姓名缺失不能通过填造姓名解决。人工修正生成新版本，令依赖旧版本的两阶段筛选结果失效。
+状态为 parsed → normalizing → normalized 或 normalize_failed。网络暂时异常、JSON 无效或校验失败可最多重试两次；超过配置超时或最终失败记录原因，保留原文进入人工队列。姓名缺失不能通过填造姓名解决。人工修正后，依赖旧数据的岗位筛选结果必须重新计算和汇总。
 
 目标接口建议 `POST /api/resumes/{resume_id}/normalize`，查询返回归一化版本、草稿和校验错误；与现有批次处理接口集成时仍需独立暴露阶段结果。
 
@@ -59,4 +59,4 @@
 - 工作月数覆盖整年、同月、在职、不可计算及重叠经历样本，结果符合已声明口径。
 - 校验失败不进入自动初筛；人工修正保留原版本与修改记录。
 
-关联规格：[上传与解析](feature_02_resume_upload_and_parsing_spec.md)、[需求初筛](feature_04_requirement_level_screening_spec.md)。
+关联规格：[上传与解析](feature_03_resume_upload_and_parsing_spec.md)、[岗位分配](feature_05_job_assignment_spec.md)。
