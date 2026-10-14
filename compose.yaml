@@ -45,8 +45,8 @@ services:
       - ./data:/app/data
       # 密钥配置只读挂载（不入镜像、不入 git）
       - ./.env:/app/.env:ro
-    expose:
-      - "8000"
+    ports:
+      - "127.0.0.1:18085:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/resumes/stats', timeout=5)"]
       interval: 30s
@@ -57,20 +57,6 @@ services:
       db:
         condition: service_healthy
 
-  nginx:
-    image: nginx:stable-alpine
-    container_name: smartresume-nginx
-    restart: unless-stopped
-    ports:
-      # 服务器为共享机：80/8000/8084 已被占用（系统 nginx 与既有服务）
-      # 8084 保留作备选方案，本服务使用 18085
-      - "18085:80"
-    volumes:
-      # 前端静态文件（vite build 产物）
-      - ./src/web/dist:/usr/share/nginx/html:ro
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - backend
 
 volumes:
   postgres_data:
