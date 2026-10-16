@@ -1,4 +1,4 @@
-"""SQLAlchemy ORM：13 张表。
+"""SQLAlchemy ORM 数据模型。
 
 字段口径以 PRD 数据库表图为准，列名统一 snake_case；
 性别存 int（0-男 1-女，NULL=未知）；年月统一 VARCHAR(7) "YYYY-MM"。
@@ -12,6 +12,7 @@ from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Integer,
@@ -35,6 +36,109 @@ class TimestampMixin:
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
+    )
+
+
+class UserAccount(Base, TimestampMixin):
+    """内部 HR 用户账号。"""
+
+    __tablename__ = "user_accounts"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('normal', 'disabled')",
+            name="ck_user_accounts_status",
+        ),
+        CheckConstraint(
+            "failed_login_count >= 0",
+            name="ck_user_accounts_failed_login_count",
+        ),
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        IntPK,
+        primary_key=True,
+        autoincrement=True,
+    )
+    username: Mapped[str] = mapped_column(
+        String(100),
+        unique=True,
+        index=True,
+        nullable=False,
+    )
+    display_name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+    password_hash: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default="normal",
+        nullable=False,
+    )
+    failed_login_count: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
+    )
+    locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+    last_login_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+    sessions: Mapped[list["AuthSession"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+
+class AuthSession(Base):
+    """服务端登录会话，数据库只保存令牌哈希。"""
+
+    __tablename__ = "auth_sessions"
+
+    session_id: Mapped[int] = mapped_column(
+        IntPK,
+        primary_key=True,
+        autoincrement=True,
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user_accounts.user_id"),
+        index=True,
+        nullable=False,
+    )
+    token_hash: Mapped[str] = mapped_column(
+        String(64),
+        unique=True,
+        index=True,
+        nullable=False,
+    )
+    csrf_token_hash: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        index=True,
+        nullable=False,
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.current_timestamp(),
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.current_timestamp(),
+    )
+
+    user: Mapped["UserAccount"] = relationship(
+        back_populates="sessions",
     )
 
 
