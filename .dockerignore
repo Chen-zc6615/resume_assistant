@@ -4,7 +4,7 @@
 
 # Python
 .venv
-__pycache__
+**/__pycache__
 *.pyc
 .pytest_cache
 .ruff_cache
@@ -21,11 +21,11 @@ data
 *.db-shm
 
 # Frontend
-src/web/node_modules
-src/web/dist
+**/node_modules
+services/app/web/dist
 
-# Development files
-tests
+# 测试与文档（不进镜像）
+**/tests
 evals
 specs
 .agents
