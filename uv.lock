@@ -9,6 +9,7 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "resume-app-service",
     "resume-assistant",
     "resume-knowledge-service",
     "resume-parser-service",
@@ -2872,9 +2873,9 @@ wheels = [
 ]
 
 [[package]]
-name = "resume-assistant"
+name = "resume-app-service"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "services/app" }
 dependencies = [
     { name = "dateparser" },
     { name = "fastapi" },
@@ -2892,13 +2893,6 @@ dependencies = [
     { name = "uvicorn", extra = ["standard"] },
 ]
 
-[package.optional-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "ruff" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "dateparser", specifier = ">=1.2" },
@@ -2911,20 +2905,37 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pydantic-settings", specifier = ">=2.3" },
     { name = "pymupdf", specifier = ">=1.24" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.2" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
     { name = "python-multipart", specifier = ">=0.0.9" },
     { name = "rapidfuzz", specifier = ">=3.9" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.5" },
     { name = "sqlalchemy", specifier = ">=2.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
 ]
-provides-extras = ["dev"]
+
+[[package]]
+name = "resume-assistant"
+version = "0.1.0"
+source = { virtual = "." }
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.2" },
+    { name = "pytest-asyncio", specifier = ">=0.23" },
+    { name = "ruff", specifier = ">=0.5" },
+]
 
 [[package]]
 name = "resume-knowledge-service"
 version = "0.1.0"
-source = { virtual = "knowledge_service" }
+source = { editable = "services/knowledge" }
 dependencies = [
     { name = "chromadb" },
     { name = "fastapi" },
@@ -2938,11 +2949,6 @@ dependencies = [
     { name = "uvicorn", extra = ["standard"] },
 ]
 
-[package.optional-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "chromadb", specifier = ">=1.0" },
@@ -2952,17 +2958,15 @@ requires-dist = [
     { name = "openai", specifier = ">=1.40" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pydantic-settings", specifier = ">=2.3" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.2" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "rank-bm25", specifier = ">=0.2.2" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
 ]
-provides-extras = ["dev"]
 
 [[package]]
 name = "resume-parser-service"
 version = "0.1.0"
-source = { virtual = "parser_service" }
+source = { editable = "services/parser" }
 dependencies = [
     { name = "fastapi" },
     { name = "openai" },

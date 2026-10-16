@@ -47,10 +47,10 @@ jobs:
                 python-version: 3.12
 
             - name: Install backend dependencies
-              run: uv sync --extra dev
+              run: uv sync --all-packages
 
             - name: Run backend tests
-              run: uv run --extra dev pytest tests/ -v
+              run: uv run pytest services/app/tests -v
 
 
     frontend:
@@ -60,7 +60,7 @@ jobs:
 
         defaults:
             run:
-                working-directory: src/web
+                working-directory: services/app/web
 
         steps:
             - name: Checkout repository
@@ -71,7 +71,7 @@ jobs:
               with:
                 node-version: "24"
                 cache: npm
-                cache-dependency-path: src/web/package-lock.json
+                cache-dependency-path: services/app/web/package-lock.json
 
             - name: Install frontend dependencies
               run: npm ci

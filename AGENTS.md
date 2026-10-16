@@ -16,14 +16,25 @@
 
 ## 四层架构（严禁跨层调用）
 
+本仓库为 uv workspace monorepo，三个后端服务平级位于 `services/`，公共代码位于 `packages/`：
+
 ```
-src/api/        路由暴露层（FastAPI，参数校验后调 services）
-src/services/   业务逻辑与状态机（upload/parse/normalize/screen/pipeline）
-src/models/     ORM（db_models）与 Pydantic 契约（schemas）
-src/core/       配置、安全、日志
-src/db/         引擎与会话（PostgreSQL）
-src/web/        Vue3 + Element Plus 前端（独立 npm 项目）
+services/app/                 主服务（resume-app-service，端口 8000）
+  src/app_service/
+    api/        路由暴露层（FastAPI，参数校验后调 services）
+    services/   业务逻辑与状态机（upload/normalize/screen/pipeline）
+    clients/    调其他服务的 HTTP 客户端（如 parser_client）
+    models/     ORM（db_models）与 Pydantic 契约（schemas）
+    core/       配置、安全、日志
+    db/         引擎与会话（PostgreSQL）
+  web/          Vue3 + Element Plus 前端（独立 npm 项目）
+  tests/        单测 + 集成测试
+services/parser/              解析服务（resume-parser-service，端口 8002）
+services/knowledge/           知识库服务（resume-knowledge-service，端口 8001）
+packages/shared/              公共代码（resume_shared：PDF 校验等）
 ```
+
+> 数据库为现成服务（PostgreSQL 容器），不占 `services/` 目录。
 
 ## 硬性纪律
 
@@ -42,13 +53,17 @@ src/web/        Vue3 + Element Plus 前端（独立 npm 项目）
 ## 常用命令
 
 ```bash
-# 后端（Windows，.venv 已就绪）
-.venv/Scripts/python.exe -m pytest tests/ -v        # 测试
-.venv/Scripts/python.exe -m uvicorn src.app:create_app --factory --reload  # 起服务 :8000
+# 依赖（根目录，uv workspace 统一安装所有服务）
+uv sync --all-packages
+
+# 主服务（从仓库根目录运行）
+uv run pytest services/app/tests -v                 # 测试
+uv run uvicorn app_service.app:create_app --factory \
+    --app-dir services/app/src --reload             # 起服务 :8000
 
 # 前端
-cd src/web && npm run dev     # :5173，代理 /api -> :8000
-cd src/web && npm run build   # vue-tsc 类型检查 + 构建
+cd services/app/web && npm run dev     # :5173，代理 /api -> :8000
+cd services/app/web && npm run build   # vue-tsc 类型检查 + 构建
 
 # 启用 git 钩子
 git config core.hooksPath .githooks

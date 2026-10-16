@@ -10,15 +10,15 @@
 - **PDF 解析**：PyMuPDF → pdfplumber → OCR 三级兜底
 
 ```
-src/api/        FastAPI 路由（resume / parse / jobs / screen）
-src/services/   业务逻辑（upload / parse / normalize / screen / pipeline）
-src/models/     ORM + Pydantic 契约
-src/core/       配置 / 安全 / 日志
-src/web/        Vue3 前端
-specs/          PRD / 数据契约 / 验收协议（真理之源）
-evals/          黄金样本 S01-S10
-tests/          单测 + 集成测试
-.agents/skills/ 解析 / 归一化 / 初筛三个技能包 SOP
+services/app/              主服务：业务主线 + 前端（:8000）
+  src/app_service/         后端代码（api / services / clients / models / core / db）
+  web/                     Vue3 + Element Plus 前端（独立 npm 项目）
+services/parser/           解析服务：PDF → 文本（:8002）
+services/knowledge/        知识库服务：混合检索（:8001）
+packages/shared/           公共代码（PDF 校验等）
+specs/                     PRD / 数据契约 / 验收协议（真理之源）
+evals/                     黄金样本 S01-S10
+.agents/skills/            按业务域组织的技能包 SOP
 ```
 
 详细规范见 [AGENTS.md](AGENTS.md)。
@@ -38,10 +38,11 @@ cp .env.example .env
 docker compose up -d db
 ```
 
-### 3. 启动后端（:8000）
+### 3. 依赖与启动后端（:8000）
 
 ```bash
-.venv/Scripts/python.exe -m uvicorn src.app:create_app --factory --reload
+uv sync --all-packages    # 统一安装三个服务的依赖（uv workspace）
+uv run uvicorn app_service.app:create_app --factory --app-dir services/app/src --reload
 ```
 
 Swagger 文档：http://127.0.0.1:8000/docs
@@ -49,7 +50,7 @@ Swagger 文档：http://127.0.0.1:8000/docs
 ### 4. 启动前端（:5173，已代理 /api）
 
 ```bash
-cd src/web
+cd services/app/web
 npm install
 npm run dev
 ```
@@ -58,7 +59,7 @@ npm run dev
 
 ```bash
 docker compose up -d db-test
-.venv/Scripts/python.exe -m pytest tests/ -v
+uv run pytest services/app/tests -v
 ```
 
 ## 业务流程

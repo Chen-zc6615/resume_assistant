@@ -3,42 +3,22 @@ name = "resume-assistant"
 version = "0.1.0"
 description = "智能简历筛选助手：批量解析、归一化、硬性初筛、人工审核入库"
 requires-python = ">=3.12"
-dependencies = [
-    "fastapi>=0.115",
-    "uvicorn[standard]>=0.30",
-    "pydantic>=2.7",
-    "pydantic-settings>=2.3",
-    "sqlalchemy>=2.0",
-    "psycopg[binary]>=3.2",
-    "httpx>=0.27",
-    "pymupdf>=1.24",
-    "pdfplumber>=0.11",
-    "openai>=1.40",
-    "jsonschema>=4.22",
-    "rapidfuzz>=3.9",
-    "dateparser>=1.2",
-    "python-multipart>=0.0.9",
-]
+dependencies = []
 
-[project.optional-dependencies]
+# 本仓库为 uv workspace：根目录仅作总调度，不承载业务代码。
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["services/*", "packages/*"]
+
+# 仓库级开发工具（三个服务共享一套）
+[dependency-groups]
 dev = [
     "pytest>=8.2",
     "pytest-asyncio>=0.23",
     "ruff>=0.5",
 ]
-
-# uv workspace：本仓库的根项目即主服务（resume-assistant），
-# 并统一管理两个独立服务的依赖。统一用根 uv.lock。
-[tool.uv.workspace]
-members = [
-    "parser_service",
-    "knowledge_service",
-]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-asyncio_mode = "auto"
-pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100
