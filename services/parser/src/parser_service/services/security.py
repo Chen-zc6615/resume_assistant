@@ -1,33 +1,17 @@
+"""文件安全：PDF 校验委托 resume_shared。"""
+
 from __future__ import annotations
 
-import pymupdf
+from resume_shared.pdf_validation import (
+    FileValidationError,
+    validate_pdf_bytes,
+)
 
 from parser_service.core.config import Settings
 
-PDF_MAGIC = b"%PDF-"
-
-
-class FileValidationError(ValueError):
-    pass
+__all__ = ["FileValidationError", "validate_pdf"]
 
 
 def validate_pdf(content: bytes, settings: Settings) -> int:
-    max_bytes = settings.max_upload_size_mb * 1024 * 1024
-    if not content:
-        raise FileValidationError("文件为空，请重新上传")
-    if len(content) > max_bytes:
-        raise FileValidationError(
-            f"单个文件不能大于 {settings.max_upload_size_mb}M，请重新上传"
-        )
-    if not content.startswith(PDF_MAGIC):
-        raise FileValidationError("文件不是有效的 PDF，请重新上传")
-    try:
-        with pymupdf.open(stream=content, filetype="pdf") as document:
-            if document.needs_pass:
-                raise FileValidationError("文件已加密或受保护，请重新上传")
-            return document.page_count
-    except FileValidationError:
-        raise
-    except Exception as exc:
-        raise FileValidationError("文件已损坏，解析失败，请重新上传") from exc
-
+    """校验上传的 PDF 字节，返回页数；不合规则抛 FileValidationError。"""
+    return validate_pdf_bytes(content, settings.max_upload_size_mb * 1024 * 1024)
