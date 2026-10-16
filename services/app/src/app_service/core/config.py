@@ -24,17 +24,21 @@ class Settings(BaseSettings):
 
     # --- 上传约束（PRD：仅 PDF，单文件 <5M）---
     max_upload_size_mb: int = 5
-    min_effective_chars: int = 50  # SPEC：解析文本有效字符数 ≥ 50 才进入归一化
 
     # --- 大模型（DashScope OpenAI 兼容）---
     dashscope_api_key: str = ""
     llm_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     llm_model: str = "qwen-plus"          # 归一化结构化提取
-    ocr_model: str = "qwen-vl-max"        # 扫描件 OCR 兜底
     llm_timeout_seconds: float = 20.0     # PRD：归一化超 20s 判失败
-    parse_timeout_seconds: float = 10.0   # PRD：单份解析超 10s 重试
     max_llm_retries: int = 2             # SPEC：校验失败最多重试 2 次
-    max_ocr_retries: int = 2
+
+    # --- 解析服务（PDF -> 文本，独立微服务）---
+    # 解析与 OCR 均由解析服务承担；本服务不再本地解析。
+    parser_service_base_url: str = "http://127.0.0.1:8002"
+    parser_http_connect_timeout_seconds: float = 5.0
+    parser_http_read_timeout_seconds: float = 120.0  # OCR 逐页视觉调用较慢，须远大于模型超时
+    parser_http_max_retries: int = 1                 # 解析幂等，仅对连接失败/服务异常重试
+    parser_http_retry_backoff_seconds: float = 1.0
 
     # --- HR 用户（MVP 无登录，透传）---
     default_hr_id: str = "hr_admin"

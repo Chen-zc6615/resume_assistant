@@ -1,8 +1,9 @@
-"""大模型客户端封装：DashScope OpenAI 兼容模式（qwen-plus 提取 / qwen-vl-max OCR）。"""
+"""大模型客户端封装：DashScope OpenAI 兼容模式（qwen-plus 归一化提取）。
+
+扫描件 OCR 已随解析能力迁移到独立的解析服务，本模块只负责归一化文本提取。
+"""
 
 from __future__ import annotations
-
-import base64
 
 from openai import OpenAI
 
@@ -36,35 +37,4 @@ def chat_json(system_prompt: str, user_content: str) -> str:
     content = resp.choices[0].message.content
     if not content:
         raise ValueError("模型返回空内容")
-    return content
-
-
-def ocr_pdf_page_png(png_bytes: bytes) -> str:
-    """qwen-vl-max 视觉理解：从简历页面图片中抽出文字。"""
-    settings = get_settings()
-    client = get_client()
-    b64 = base64.b64encode(png_bytes).decode()
-    resp = client.chat.completions.create(
-        model=settings.ocr_model,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{b64}"},
-                    },
-                    {
-                        "type": "text",
-                        "text": "请识别这张简历图片中的全部文字，按从上到下、从左到右的阅读顺序输出纯文本，不要输出任何解释。",
-                    },
-                ],
-            }
-        ],
-        temperature=0.1,
-        timeout=settings.parse_timeout_seconds * 3,
-    )
-    content = resp.choices[0].message.content
-    if not content:
-        raise ValueError("OCR 返回空内容")
     return content

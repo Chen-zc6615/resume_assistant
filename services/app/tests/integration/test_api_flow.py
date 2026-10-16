@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 
 import pytest
+from app_service.clients import parser_client
 from app_service.services import llm
 from fastapi.testclient import TestClient
 
@@ -50,7 +51,20 @@ MOCK_EXTRACT = {
 
 @pytest.fixture()
 def mock_llm(monkeypatch):
-    monkeypatch.setattr(llm, "chat_json", lambda sys, user: json.dumps(MOCK_EXTRACT, ensure_ascii=False))
+    """打桩归一化 LLM 与解析 HTTP 客户端（测试不依赖真实模型/解析服务）。"""
+    monkeypatch.setattr(
+        llm, "chat_json", lambda sys, user: json.dumps(MOCK_EXTRACT, ensure_ascii=False)
+    )
+    # 解析已迁为独立服务：打桩 HTTP 客户端返回固定文本，验证编排与状态机
+    monkeypatch.setattr(
+        parser_client,
+        "parse_resume_via_service",
+        lambda pdf_path: parser_client.ParseResult(
+            text="张三 简历 文本（测试打桩）",
+            parse_method="stub",
+            effective_chars=10,
+        ),
+    )
 
 
 @pytest.fixture()

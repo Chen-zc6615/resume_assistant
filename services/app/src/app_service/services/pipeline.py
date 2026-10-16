@@ -9,16 +9,17 @@ import threading
 
 from sqlalchemy.orm import Session
 
+from app_service.clients import parser_client
 from app_service.core.logger import get_logger
 from app_service.db.session import SessionLocal
 from app_service.models.db_models import Job, Requirement, Resume
 from app_service.services.assign_service import assign_resumes
 from app_service.services.normalize_service import normalize_resume
-from app_service.services.parse_service import parse_pdf
 from app_service.services.screen_service import create_run_from_job
 from app_service.services.upload_service import (
     STATUS_NORMALIZE_FAILED,
     STATUS_NORMALIZED,
+    STATUS_PARSE_FAILED,
     STATUS_PARSED,
     STATUS_PENDING_COMPLETION,
     STATUS_UPLOADED,
@@ -127,17 +128,17 @@ def _process_one(db: Session, batch_id: str, resume: Resume) -> bool:
     """处理单份简历：解析 -> 归一化。返回是否归一化成功（可参与初筛）。"""
     resume_id = resume.resume_id
 
-    # ---- 阶段1：解析（0/7 -> 8）----
+    # ---- 阶段1：解析（7 -> 8），经解析服务 ----
     if resume.status in (STATUS_UPLOADED,):
         try:
-            text = parse_pdf(upload_file_path(resume))
-            resume.raw_text = text
+            result = parser_client.parse_resume_via_service(upload_file_path(resume))
+            resume.raw_text = result.text
             resume.status = STATUS_PARSED
             resume.failure_reason = None
             db.commit()
             _record(batch_id, "parse_success")
         except Exception as e:  # noqa: BLE001
-            resume.status = 1  # 解析失败
+            resume.status = STATUS_PARSE_FAILED
             resume.failure_reason = f"解析失败：{e}"
             db.commit()
             _record(batch_id, "failed")
