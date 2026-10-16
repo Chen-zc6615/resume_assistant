@@ -27,6 +27,14 @@ dev = [
     "ruff>=0.5",
 ]
 
+# uv workspace：本仓库的根项目即主服务（resume-assistant），
+# 并统一管理两个独立服务的依赖。统一用根 uv.lock。
+[tool.uv.workspace]
+members = [
+    "parser_service",
+    "knowledge_service",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
