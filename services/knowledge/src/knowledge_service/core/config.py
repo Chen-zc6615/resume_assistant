@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from functools import lru_cache
 from pathlib import Path
 
@@ -26,7 +24,7 @@ class Settings(BaseSettings):
     knowledge_chunk_size: int = Field(default=550, ge=100)
     knowledge_chunk_overlap: int = Field(default=80, ge=0)
     knowledge_rough_top_k: int = Field(default=15, ge=1, le=100)
-    knowledge_final_top_k: int = Field(default=5, ge=1, le=20)
+    knowledge_final_top_k: int = Field(default=3, ge=1, le=20)
     knowledge_refusal_threshold: float = Field(default=0.35, ge=0.0, le=1.0)
     model_timeout_seconds: float = Field(default=120.0, gt=0)
 

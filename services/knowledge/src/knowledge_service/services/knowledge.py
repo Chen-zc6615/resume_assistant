@@ -92,4 +92,3 @@ class KnowledgeService:
             citations=citations,
             latency_ms=search_response.latency_ms,
         )
-

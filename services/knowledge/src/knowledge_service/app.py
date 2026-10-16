@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -19,7 +17,7 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Smart Resume Knowledge Service",
+        title="Knowledge Service",
         description="Independent document indexing, hybrid retrieval, reranking and citations",
         version="0.1.0",
         lifespan=lifespan,
