@@ -1,14 +1,26 @@
 FROM python:3.12-slim
-
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+COPY --from=ghcr.io/astral-sh/uv:0.12.19 /uv /uvx /usr/local/bin/
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_LINK_MODE=copy
 
 WORKDIR /app
-COPY pyproject.toml ./
-COPY src ./src
-RUN pip install --no-cache-dir .
+
+# workspace 清单
+COPY pyproject.toml uv.lock ./
+COPY services/app/pyproject.toml ./services/app/pyproject.toml
+COPY services/parser/pyproject.toml ./services/parser/pyproject.toml
+COPY services/knowledge/pyproject.toml ./services/knowledge/pyproject.toml
+COPY packages/shared/pyproject.toml ./packages/shared/pyproject.toml
+
+# 本服务源码
+COPY services/knowledge/src ./services/knowledge/src
+
+RUN uv sync --frozen --no-dev --package resume-knowledge-service
 RUN mkdir -p /app/data/chroma
 
+ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8001
-CMD ["python", "-m", "uvicorn", "knowledge_service.app:create_app", "--factory", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8001"]
-
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"
+CMD ["uvicorn", "knowledge_service.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8001"]
