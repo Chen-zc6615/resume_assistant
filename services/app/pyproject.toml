@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "智能简历筛选助手主服务：上传、归一化、分配、初筛、审核"
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.14",
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "pydantic>=2.7",

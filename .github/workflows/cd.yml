@@ -1,4 +1,4 @@
-name: CD - Publish Image
+name: CD - Production
 
 on:
   workflow_run:
@@ -6,38 +6,39 @@ on:
     types: [completed]
     branches: [main]
 
-  workflow_dispatch:
-
 permissions:
   contents: read
-  packages: write
 
 concurrency:
-  group: production-image
+  group: production
   cancel-in-progress: false
 
 jobs:
   publish:
-    name: Build and publish Docker image
-
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
-
+    name: Publish production images
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.version.outputs.short_sha }}
 
     env:
       IMAGE_NAME: ghcr.io/chen-zc6615/resume_assistant
-      SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout tested revision
         uses: actions/checkout@v7
         with:
           ref: ${{ env.SOURCE_SHA }}
 
-      - name: Generate image tag
+      - name: Generate immutable image tag
         id: version
         shell: bash
         run: echo "short_sha=${SOURCE_SHA::7}" >> "$GITHUB_OUTPUT"
@@ -59,16 +60,57 @@ jobs:
           docker tag postgres:17-alpine "${IMAGE_NAME}:postgres-17-alpine"
           docker push "${IMAGE_NAME}:postgres-17-alpine"
 
-      - name: Build and publish image
+      - name: Build and publish app image
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: services/app/Dockerfile
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.short_sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,mode=max,scope=app
+
+      - name: Build and publish parser image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/parser/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:parser-latest
+            ${{ env.IMAGE_NAME }}:parser-${{ steps.version.outputs.short_sha }}
+          cache-from: type=gha,scope=parser
+          cache-to: type=gha,mode=max,scope=parser
+
+      - name: Build and publish knowledge image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/knowledge/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:knowledge-latest
+            ${{ env.IMAGE_NAME }}:knowledge-${{ steps.version.outputs.short_sha }}
+          cache-from: type=gha,scope=knowledge
+          cache-to: type=gha,mode=max,scope=knowledge
+
+  deploy:
+    name: Deploy production
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout tested revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Configure deployment SSH
         shell: bash
@@ -90,17 +132,51 @@ jobs:
           scp compose.prod.yml \
             "${DEPLOY_USER}@${DEPLOY_HOST}:/opt/resume-assistant/compose.prod.yml"
 
-      - name: Deploy application
+      - name: Migrate and deploy application
         shell: bash
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_IMAGE_TAG: ${{ needs.publish.outputs.image_tag }}
         run: |
-          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" <<'EOF'
+          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "DEPLOY_IMAGE_TAG=${DEPLOY_IMAGE_TAG} bash -s" <<'EOF'
             set -euo pipefail
             cd /opt/resume-assistant
-            docker compose -f compose.prod.yml pull
-            docker compose -f compose.prod.yml up -d --remove-orphans
-            curl --fail --retry 10 --retry-delay 3 \
-              http://127.0.0.1:18085/api/resumes/stats
+            umask 077
+
+            printf 'IMAGE_TAG=%s\n' "$DEPLOY_IMAGE_TAG" > .deploy.next.env
+
+            compose=(docker compose --env-file .env --env-file .deploy.next.env -f compose.prod.yml)
+            "${compose[@]}" pull
+            "${compose[@]}" up -d db
+
+            mkdir -p backups
+            backup_path="backups/predeploy-$(date -u +%Y%m%dT%H%M%SZ).sql.gz"
+            "${compose[@]}" exec -T db sh -c \
+              'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' | gzip > "$backup_path"
+
+            "${compose[@]}" run --rm --no-deps app alembic upgrade head
+            "${compose[@]}" up -d --remove-orphans
+
+            if curl --fail --silent --show-error --retry 10 --retry-delay 3 --retry-all-errors \
+                 http://127.0.0.1:18085/api/resumes/stats \
+              && curl --fail --silent --show-error --retry 10 --retry-delay 3 --retry-all-errors \
+                 http://127.0.0.1:18002/health \
+              && curl --fail --silent --show-error --retry 10 --retry-delay 3 --retry-all-errors \
+                 http://127.0.0.1:18001/health; then
+              mv .deploy.next.env .deploy.env
+              echo "Deployment ${DEPLOY_IMAGE_TAG} is healthy"
+              exit 0
+            fi
+
+            echo "Deployment health check failed" >&2
+            rm -f .deploy.next.env
+            if [[ -f .deploy.env ]]; then
+              previous_tag="$(sed -n 's/^IMAGE_TAG=//p' .deploy.env | head -n 1)"
+              echo "Rolling services back to ${previous_tag}" >&2
+              compose=(docker compose --env-file .env --env-file .deploy.env -f compose.prod.yml)
+              "${compose[@]}" up -d --remove-orphans
+            fi
+            exit 1
           EOF
