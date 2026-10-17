@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   backend:
-    name: backend tests
+    name: Backend quality gate
     needs: containers
     if: ${{ always() }}
     runs-on: ubuntu-latest
