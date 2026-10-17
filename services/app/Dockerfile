@@ -26,6 +26,8 @@ COPY packages/shared/pyproject.toml ./packages/shared/pyproject.toml
 COPY packages/shared/src ./packages/shared/src
 COPY services/app/src ./services/app/src
 COPY services/app/main.py ./services/app/main.py
+COPY alembic.ini ./alembic.ini
+COPY services/app/migrations ./services/app/migrations
 
 # 仅安装本服务及其依赖（uv workspace 解析 resume-shared）
 RUN uv sync --frozen --no-dev --package resume-app-service

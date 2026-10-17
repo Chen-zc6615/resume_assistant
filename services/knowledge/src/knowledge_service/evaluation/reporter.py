@@ -90,10 +90,14 @@ def render_markdown(run: EvaluationRun) -> str:
             f"| RRF平均候选数 | {summary.average_rrf_candidate_count:.2f} |",
             f"| Rerank排名提升率 | {_percentage(summary.rerank_improvement_rate)} |",
             f"| Rerank平均排名变化 | {_number(summary.average_rerank_rank_change, 2)} |",
-            "| 元数据过滤条件遵守率 | "
-            f"{_percentage(summary.metadata_filter_compliance_rate)} |",
-            "| 元数据过滤答案保留率 | "
-            f"{_percentage(summary.metadata_filter_recall_rate)} |",
+            (
+                "| 元数据过滤条件遵守率 | "
+                f"{_percentage(summary.metadata_filter_compliance_rate)} |"
+            ),
+            (
+                "| 元数据过滤答案保留率 | "
+                f"{_percentage(summary.metadata_filter_recall_rate)} |"
+            ),
             "",
             "## LLM-as-Judge",
             "",
@@ -114,8 +118,10 @@ def render_markdown(run: EvaluationRun) -> str:
             "",
             "## 黄金用例明细",
             "",
-            "| ID | 分类 | 结果 | Hit@1 | Hit@3 | RRF排名 | "
-            "Rerank排名 | Top分数 | 引用数 | 延迟 |",
+            (
+                "| ID | 分类 | 结果 | Hit@1 | Hit@3 | RRF排名 | "
+                "Rerank排名 | Top分数 | 引用数 | 延迟 |"
+            ),
             "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
         ]
     )
