@@ -60,13 +60,16 @@ jobs:
       - name: Apply database migrations
         run: uv run alembic upgrade head
 
-      - name: Run all backend tests
-        run: >-
-          uv run pytest
-          services/app/tests
-          services/parser/tests
-          services/knowledge/tests
-          -v
+      # 各服务的 tests/ 都是 Python 包；分进程执行以避免同名
+      # tests.conftest 在 pytest 收集阶段发生 ImportPathMismatchError。
+      - name: Run app service tests
+        run: uv run pytest services/app/tests -v
+
+      - name: Run parser service tests
+        run: uv run pytest services/parser/tests -v
+
+      - name: Run knowledge service tests
+        run: uv run pytest services/knowledge/tests -v
 
   frontend:
     name: Frontend type check and build
