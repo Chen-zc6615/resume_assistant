@@ -9,9 +9,11 @@
 
 ## 本地启动
 
+配置统一读取仓库根目录的 `.env`（可从根目录 `.env.example` 复制）。
+
 ```bash
-cp .env.example .env
-python -m uvicorn parser_service.app:create_app --factory --app-dir src --port 8002
+uv run --package resume-parser-service uvicorn parser_service.app:create_app \
+  --factory --app-dir services/parser/src --port 8002
 ```
 
 Swagger：http://127.0.0.1:8002/docs

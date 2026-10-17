@@ -287,7 +287,6 @@ class InterviewCreate(BaseModel):
     interviewer: str | None = None
     note: str | None = None
     notify_way: str | None = None
-    created_by: str = "hr_admin"
 
 
 class InterviewOut(BaseModel):
@@ -317,7 +316,6 @@ class TalentPoolIn(BaseModel):
     source_requirement_id: int | None = None
     source_job_id: int | None = None
     note: str | None = None
-    created_by: str = "hr_admin"
 
 
 class TalentPoolOut(BaseModel):
@@ -332,6 +330,11 @@ class TalentPoolOut(BaseModel):
     note: str | None
     created_by: str
     created_at: str | None
+    knowledge_sync_status: Literal["pending", "syncing", "success", "failed"]
+    knowledge_document_id: str | None
+    knowledge_chunk_count: int | None
+    knowledge_sync_error: str | None
+    knowledge_synced_at: str | None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -7,18 +7,31 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app_service.api.resume import brief_from
+from app_service.clients.knowledge_client import KnowledgeServiceError
+from app_service.core.identity import get_trusted_actor
+from app_service.core.logger import get_logger
 from app_service.db.session import get_db
 from app_service.models.db_models import Interview, Job, Requirement, Resume, TalentPool
 from app_service.models.schemas import InterviewCreate, InterviewOut, TalentPoolIn, TalentPoolOut
+from app_service.services.talent_knowledge_service import (
+    TalentKnowledgeDataError,
+    delete_talent_from_knowledge,
+    sync_talent_to_knowledge,
+)
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 # ---------------------- 面试邀约 ----------------------
 
 
 @router.post("/interviews", response_model=InterviewOut)
-def create_interview(req: InterviewCreate, db: Session = Depends(get_db)):
+def create_interview(
+    req: InterviewCreate,
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_trusted_actor),
+):
     """发起面试邀约（留痕；同时把简历标记为「已邀请面试」）。"""
     resume = db.get(Resume, req.resume_id)
     if resume is None:
@@ -33,7 +46,7 @@ def create_interview(req: InterviewCreate, db: Session = Depends(get_db)):
         interviewer=req.interviewer,
         note=req.note,
         notify_way=req.notify_way,
-        created_by=req.created_by,
+        created_by=actor,
     )
     db.add(interview)
     resume.interview_status = 1  # 已邀请面试
@@ -66,7 +79,12 @@ def _interview_out(db: Session, interview: Interview) -> InterviewOut:
 
 
 @router.post("/pool", response_model=TalentPoolOut)
-def add_to_pool(req: TalentPoolIn, resume_id: int = Query(...), db: Session = Depends(get_db)):
+def add_to_pool(
+    req: TalentPoolIn,
+    resume_id: int = Query(...),
+    db: Session = Depends(get_db),
+    actor: str = Depends(get_trusted_actor),
+):
     """把简历沉淀入候选人才库（HR 复核后长期储备；一份简历一条，重复入库 409）。"""
     resume = db.get(Resume, resume_id)
     if resume is None:
@@ -83,11 +101,21 @@ def add_to_pool(req: TalentPoolIn, resume_id: int = Query(...), db: Session = De
         source_requirement_id=req.source_requirement_id,
         source_job_id=req.source_job_id,
         note=req.note,
-        created_by=req.created_by,
+        created_by=actor,
     )
     db.add(entry)
     db.commit()
     db.refresh(entry)
+    try:
+        sync_talent_to_knowledge(db, entry)
+    except (KnowledgeServiceError, TalentKnowledgeDataError) as exc:
+        # 人才库沉淀已经成功；外部知识库故障不能回滚独立的业务事务。
+        logger.warning(
+            "人才已沉淀但知识库同步失败 pool_id=%s resume_id=%s: %s",
+            entry.pool_id,
+            entry.resume_id,
+            exc,
+        )
     return _pool_out(db, entry)
 
 
@@ -106,7 +134,32 @@ def remove_from_pool(pool_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "该记录不在沉淀库中")
     db.delete(entry)
     db.commit()
+    try:
+        delete_talent_from_knowledge(pool_id)
+    except KnowledgeServiceError as exc:
+        # 数据库是业务真理之源；索引删除失败留日志，允许后续重复删除。
+        logger.warning("人才已移出但知识库删除失败 pool_id=%s: %s", pool_id, exc)
     return {"ok": True}
+
+
+@router.post("/pool/{pool_id}/sync-knowledge")
+def retry_pool_knowledge_sync(pool_id: int, db: Session = Depends(get_db)):
+    """手动重试人才 Wiki 生成与知识库索引。"""
+
+    entry = db.get(TalentPool, pool_id)
+    if entry is None:
+        raise HTTPException(404, "该记录不在沉淀库中")
+    try:
+        result = sync_talent_to_knowledge(db, entry)
+    except TalentKnowledgeDataError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except KnowledgeServiceError as exc:
+        raise HTTPException(503, "知识库同步失败，请稍后重试") from exc
+    return {
+        "ok": True,
+        "document_id": result.document_id,
+        "chunk_count": result.chunk_count,
+    }
 
 
 def _pool_out(db: Session, entry: TalentPool) -> TalentPoolOut:
@@ -120,6 +173,13 @@ def _pool_out(db: Session, entry: TalentPool) -> TalentPoolOut:
         note=entry.note,
         created_by=entry.created_by,
         created_at=str(entry.created_at) if entry.created_at else None,
+        knowledge_sync_status=entry.knowledge_sync_status,
+        knowledge_document_id=entry.knowledge_document_id,
+        knowledge_chunk_count=entry.knowledge_chunk_count,
+        knowledge_sync_error=entry.knowledge_sync_error,
+        knowledge_synced_at=(
+            str(entry.knowledge_synced_at) if entry.knowledge_synced_at else None
+        ),
     )
     resume = db.get(Resume, entry.resume_id)
     if resume is not None:

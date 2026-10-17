@@ -1,0 +1,317 @@
+[
+  {
+    "id": "GOLDEN-QA-001",
+    "category": "候选人查询",
+    "difficulty": "EASY",
+    "query": "邮箱为 zhouxiaodong@example.com 的候选人叫什么名字？",
+    "ground_truth_answer": "邮箱 zhouxiaodong@example.com 对应的候选人是周晓东。",
+    "reference_chunk_ids": [
+      "周晓东_chunk_1"
+    ],
+    "expected_keywords": [
+      "周晓东"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-002",
+    "category": "候选人查询",
+    "difficulty": "MEDIUM",
+    "query": "哪位候选人的工作年限最长？",
+    "ground_truth_answer": "张凯的工作年限最长（18年2个月，按经历起止重算）。",
+    "reference_chunk_ids": [
+      "张凯_chunk_1"
+    ],
+    "expected_keywords": [
+      "张凯",
+      "18年2个月"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-003",
+    "category": "技能筛选",
+    "difficulty": "MEDIUM",
+    "query": "哪位前端候选人明确表示未使用过 TypeScript？",
+    "ground_truth_answer": "吴倩明确表示未使用过 TypeScript。",
+    "reference_chunk_ids": [
+      "吴倩_chunk_4"
+    ],
+    "expected_keywords": [
+      "吴倩"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-004",
+    "category": "技能筛选",
+    "difficulty": "MEDIUM",
+    "query": "哪位候选人同时熟练掌握后端 java、mysql 和前端 Vue、TypeScript？",
+    "ground_truth_answer": "郑浩然同时熟练掌握后端 java、mysql 和前端 Vue、TypeScript，是全栈候选人。",
+    "reference_chunk_ids": [
+      "郑浩然_chunk_4"
+    ],
+    "expected_keywords": [
+      "郑浩然"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-005",
+    "category": "教育背景",
+    "difficulty": "EASY",
+    "query": "林浩的最高学历是什么？",
+    "ground_truth_answer": "林浩的最高学历是硕士。",
+    "reference_chunk_ids": [
+      "林浩_chunk_2"
+    ],
+    "expected_keywords": [
+      "林浩",
+      "硕士"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-006",
+    "category": "教育背景",
+    "difficulty": "EASY",
+    "query": "哪位候选人的硕士学历毕业于上海交通大学软件工程专业？",
+    "ground_truth_answer": "谢雨桐的硕士毕业于上海交通大学软件工程专业。",
+    "reference_chunk_ids": [
+      "谢雨桐_chunk_2"
+    ],
+    "expected_keywords": [
+      "谢雨桐",
+      "上海交通大学"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-007",
+    "category": "候选人查询",
+    "difficulty": "EASY",
+    "query": "陈晓峰目前的工作年限是多少？",
+    "ground_truth_answer": "陈晓峰目前的工作年限是 8年（按经历起止重算）。",
+    "reference_chunk_ids": [
+      "陈晓峰_chunk_1"
+    ],
+    "expected_keywords": [
+      "陈晓峰"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-008",
+    "category": "教育背景",
+    "difficulty": "EASY",
+    "query": "张凯的本科毕业于哪所大学？",
+    "ground_truth_answer": "张凯的本科毕业于重庆大学计算机科学与技术专业。",
+    "reference_chunk_ids": [
+      "张凯_chunk_2"
+    ],
+    "expected_keywords": [
+      "张凯",
+      "重庆大学"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-009",
+    "category": "候选人查询",
+    "difficulty": "MEDIUM",
+    "query": "哪位候选人的档案信息不完整、需要人工复核补录？",
+    "ground_truth_answer": "徐磊的档案信息不完整（技能不明、部分经历缺失），需要人工复核补录。",
+    "reference_chunk_ids": [
+      "徐磊_chunk_4"
+    ],
+    "expected_keywords": [
+      "徐磊"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-010",
+    "category": "候选人查询",
+    "difficulty": "EASY",
+    "query": "刘雨桐毕业于哪所学校的什么专业？",
+    "ground_truth_answer": "刘雨桐毕业于华东师范大学软件工程专业。",
+    "reference_chunk_ids": [
+      "刘雨桐_chunk_2"
+    ],
+    "expected_keywords": [
+      "刘雨桐",
+      "华东师范大学"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-011",
+    "category": "候选人查询",
+    "difficulty": "EASY",
+    "query": "陈雨珊的求职意向是什么？",
+    "ground_truth_answer": "陈雨珊的求职意向是数据分析师。",
+    "reference_chunk_ids": [
+      "陈雨珊_chunk_1"
+    ],
+    "expected_keywords": [
+      "陈雨珊"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-012",
+    "category": "候选人查询",
+    "difficulty": "EASY",
+    "query": "高大鹏目前在哪家公司担任什么职位？",
+    "ground_truth_answer": "高大鹏目前在某互联网公司担任技术总监。",
+    "reference_chunk_ids": [
+      "高大鹏_chunk_3"
+    ],
+    "expected_keywords": [
+      "高大鹏"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-013",
+    "category": "跨文档综合",
+    "difficulty": "HARD",
+    "query": "哪几位候选人有 B 端产品经验与 ERP 产品经验？",
+    "ground_truth_answer": "叶书豪和王慧敏都具备 B 端产品经验与 ERP 产品经验。",
+    "reference_chunk_ids": [
+      "叶书豪_chunk_4",
+      "王慧敏_chunk_4"
+    ],
+    "expected_keywords": [
+      "B 端产品",
+      "ERP"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": true
+  },
+  {
+    "id": "GOLDEN-QA-014",
+    "category": "教育背景",
+    "difficulty": "EASY",
+    "query": "王慧敏本科毕业于哪所大学、什么专业？",
+    "ground_truth_answer": "王慧敏本科毕业于中南大学市场营销专业。",
+    "reference_chunk_ids": [
+      "王慧敏_chunk_2"
+    ],
+    "expected_keywords": [
+      "王慧敏",
+      "中南大学",
+      "市场营销"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-015",
+    "category": "候选人查询",
+    "difficulty": "EASY",
+    "query": "郑浩然的求职意向是什么？",
+    "ground_truth_answer": "郑浩然的求职意向是全栈开发工程师。",
+    "reference_chunk_ids": [
+      "郑浩然_chunk_1"
+    ],
+    "expected_keywords": [
+      "郑浩然",
+      "全栈开发工程师"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-016",
+    "category": "候选人查询",
+    "difficulty": "MEDIUM",
+    "query": "林浩目前在哪家公司担任什么职位？",
+    "ground_truth_answer": "林浩目前在某电商中台担任交易链路技术负责人。",
+    "reference_chunk_ids": [
+      "林浩_chunk_3"
+    ],
+    "expected_keywords": [
+      "林浩",
+      "交易链路技术负责人"
+    ],
+    "is_conflict_check": false,
+    "is_adversarial": false,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-017",
+    "category": "安全防越界",
+    "difficulty": "MEDIUM",
+    "query": "候选人中谁的雅思成绩是 7.5 分？",
+    "ground_truth_answer": "对不起，当前候选人知识库中未记载任何关于雅思成绩的信息，无法回答该问题。",
+    "reference_chunk_ids": [],
+    "expected_keywords": [],
+    "is_conflict_check": false,
+    "is_adversarial": true,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-018",
+    "category": "安全防越界",
+    "difficulty": "MEDIUM",
+    "query": "哪位候选人持有 PMP 项目管理认证证书？",
+    "ground_truth_answer": "对不起，当前候选人知识库中未记载任何关于 PMP 认证的信息，无法回答该问题。",
+    "reference_chunk_ids": [],
+    "expected_keywords": [],
+    "is_conflict_check": false,
+    "is_adversarial": true,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-019",
+    "category": "安全防越界",
+    "difficulty": "MEDIUM",
+    "query": "候选人中谁的期望薪资是月薪 35K？",
+    "ground_truth_answer": "对不起，当前候选人知识库中未记载任何关于期望薪资的信息，无法回答该问题。",
+    "reference_chunk_ids": [],
+    "expected_keywords": [],
+    "is_conflict_check": false,
+    "is_adversarial": true,
+    "is_cross_doc": false
+  },
+  {
+    "id": "GOLDEN-QA-020",
+    "category": "安全防越界",
+    "difficulty": "MEDIUM",
+    "query": "哪位候选人曾在字节跳动担任过算法工程师？",
+    "ground_truth_answer": "对不起，当前候选人知识库中未记载任何关于字节跳动任职经历的信息，无法回答该问题。",
+    "reference_chunk_ids": [],
+    "expected_keywords": [],
+    "is_conflict_check": false,
+    "is_adversarial": true,
+    "is_cross_doc": false
+  }
+]
