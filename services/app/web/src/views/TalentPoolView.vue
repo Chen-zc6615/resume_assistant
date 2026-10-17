@@ -142,6 +142,7 @@
                 <th class="text-left font-medium px-4 py-3">核心技能</th>
                 <th class="text-left font-medium px-4 py-3">来源（需求 - 岗位）</th>
                 <th class="text-left font-medium px-4 py-3 w-36">简历状态</th>
+                <th class="text-left font-medium px-4 py-3 w-44">知识库同步</th>
                 <th class="text-left font-medium px-4 py-3">备注</th>
                 <th class="text-right font-medium px-6 py-3 w-64">操作</th>
               </tr>
@@ -171,11 +172,32 @@
                   </el-tag>
                 </td>
                 <td class="px-4 py-4">
+                  <div class="flex flex-col items-start gap-1.5">
+                    <el-tag size="small" :type="knowledgeTagType(e.knowledge_sync_status)">
+                      {{ KNOWLEDGE_SYNC_LABELS[e.knowledge_sync_status] }}
+                    </el-tag>
+                    <span v-if="e.knowledge_sync_status === 'success'" class="text-[11px] text-slate-400">
+                      {{ e.knowledge_chunk_count ?? 0 }} 个切片
+                    </span>
+                    <span v-else-if="e.knowledge_sync_error" class="text-[11px] text-red-500 max-w-[180px]">
+                      {{ e.knowledge_sync_error }}
+                    </span>
+                  </div>
+                </td>
+                <td class="px-4 py-4">
                   <span class="text-xs text-slate-400 leading-relaxed">{{ e.note || '—' }}</span>
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-end gap-1.5">
                     <el-button v-if="e.resume" size="small" @click="openResume(e.resume)">查看简历</el-button>
+                    <el-button
+                      v-if="e.knowledge_sync_status !== 'success'"
+                      size="small"
+                      type="warning"
+                      plain
+                      :loading="syncingPoolId === e.pool_id"
+                      @click="doSyncKnowledge(e.pool_id)"
+                    >重新同步</el-button>
                     <el-button size="small" type="primary" plain @click="matchPlaceholder">发起匹配</el-button>
                     <el-popconfirm title="移出沉淀库？（简历记录保留）" @confirm="doRemovePool(e.pool_id)">
                       <template #reference><el-button size="small" type="danger" plain>移出</el-button></template>
@@ -184,7 +206,7 @@
                 </td>
               </tr>
               <tr v-if="!talentEntries.length">
-                <td colspan="6" class="px-6 py-14 text-center">
+                <td colspan="7" class="px-6 py-14 text-center">
                   <p class="text-sm text-slate-500">沉淀库还是空的</p>
                   <p class="text-xs text-slate-400 mt-1">在「本次岗位通过人才库」中把暂不跟进的候选人沉淀于此</p>
                 </td>
@@ -320,17 +342,21 @@ import {
 } from '@element-plus/icons-vue'
 import {
   addToTalentPool, createInterview, getResume, listResumes, listTalentPool,
-  removeFromTalentPool, resumeFileUrl, setInterviewStatus,
+  removeFromTalentPool, resumeFileUrl, setInterviewStatus, syncTalentKnowledge,
 } from '../api'
 import { toast } from '../components/toast'
 import type { ResumeBrief, ResumeDetail, TalentPoolEntry } from '../types'
 
 const INTERVIEW_LABELS = ['待面试', '已邀请面试', '面试中', '已入职', '暂不跟进']
+const KNOWLEDGE_SYNC_LABELS = {
+  pending: '待同步', syncing: '同步中', success: '同步成功', failed: '同步失败',
+} as const
 const WAYS = ['线上一面（腾讯会议）', '线上二面（技术面）', '现场面试', '电话初筛沟通']
 
 const tab = ref('pool')
 const allResumes = ref<ResumeBrief[]>([])
 const talentEntries = ref<TalentPoolEntry[]>([])
+const syncingPoolId = ref<number | null>(null)
 
 /** 本次岗位通过人才库：初筛通过待审核(10) + 已完成(4) */
 const poolRows = computed(() =>
@@ -354,6 +380,10 @@ async function load() {
 
 function interviewTagType(s: number) {
   return (['primary', 'success', 'warning', 'success', 'info'] as const)[s] ?? 'info'
+}
+
+function knowledgeTagType(status: TalentPoolEntry['knowledge_sync_status']) {
+  return ({ pending: 'info', syncing: 'warning', success: 'success', failed: 'danger' } as const)[status]
 }
 
 // ---------------- 简历抽屉 ----------------
@@ -439,12 +469,30 @@ function openPoolDialog(row: ResumeBrief) {
 async function doPool() {
   if (!poolTarget.value) return
   try {
-    await addToTalentPool(poolTarget.value.resume_id, { note: poolNote.value || null })
-    toast('已沉淀至候选人才库')
+    const entry = await addToTalentPool(poolTarget.value.resume_id, { note: poolNote.value || null })
+    if (entry.knowledge_sync_status === 'success') {
+      toast('已沉淀并同步至知识库')
+    } else {
+      toast('人才已沉淀，但知识库同步失败，可在沉淀库中重试', 'warn')
+    }
     poolDialog.value = false
     load()
   } catch (e) {
     toast(((e as { friendly?: string }).friendly ?? '沉淀失败'), 'error')
+  }
+}
+
+async function doSyncKnowledge(poolId: number) {
+  syncingPoolId.value = poolId
+  try {
+    const result = await syncTalentKnowledge(poolId)
+    toast(`知识库同步成功，共 ${result.chunk_count} 个切片`)
+    await load()
+  } catch (e) {
+    toast(((e as { friendly?: string }).friendly ?? '知识库同步失败'), 'error')
+    await load()
+  } finally {
+    syncingPoolId.value = null
   }
 }
 

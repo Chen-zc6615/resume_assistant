@@ -16,9 +16,9 @@ os.environ.setdefault(
 )
 os.environ.setdefault("UPLOAD_DIR", os.path.join(_TMP, "uploads"))
 
-# 黄金数据集路径（tests/conftest.py -> 仓库根/evals/...）
+# 简历处理黄金样本路径（tests/conftest.py -> 仓库根/evals/...）
 GOLDEN_DIR = os.path.join(
-    os.path.dirname(__file__), "..", "..", "..", "evals", "golden_datasets", "resumes"
+    os.path.dirname(__file__), "..", "..", "..", "evals", "resume_processing", "resumes"
 )
 
 

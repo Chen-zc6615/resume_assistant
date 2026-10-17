@@ -200,4 +200,9 @@ export interface TalentPoolEntry {
   note: string | null
   created_by: string
   created_at: string | null
+  knowledge_sync_status: 'pending' | 'syncing' | 'success' | 'failed'
+  knowledge_document_id: string | null
+  knowledge_chunk_count: number | null
+  knowledge_sync_error: string | null
+  knowledge_synced_at: string | null
 }

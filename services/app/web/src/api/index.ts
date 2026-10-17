@@ -87,6 +87,11 @@ export const listTalentPool = () =>
 export const removeFromTalentPool = (poolId: number) =>
   http.delete(`/talent/pool/${poolId}`).then((r) => r.data)
 
+export const syncTalentKnowledge = (poolId: number) =>
+  http.post<{ ok: boolean; document_id: string; chunk_count: number }>(
+    `/talent/pool/${poolId}/sync-knowledge`,
+  ).then((r) => r.data)
+
 export const batchStatus = (batchId: string) =>
   http.get<BatchStatus>(`/parse/${batchId}/status`).then((r) => r.data)
 

@@ -4,9 +4,11 @@
 
 ## 本地启动
 
+配置统一读取仓库根目录的 `.env`（可从根目录 `.env.example` 复制）。
+
 ```bash
-cp .env.example .env
-python -m uvicorn knowledge_service.app:create_app --factory --app-dir src --port 8001
+uv run --package resume-knowledge-service uvicorn knowledge_service.app:create_app \
+  --factory --app-dir services/knowledge/src --port 8001
 ```
 
 接口文档：`http://127.0.0.1:8001/docs`

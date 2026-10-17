@@ -10,12 +10,15 @@ from knowledge_service.models.schemas import (
     DocumentWriteResponse,
     SearchRequest,
     SearchResponse,
+    SearchResult,
+    TalentProfileUpsert,
 )
 from knowledge_service.services.chunker import MarkdownChunker
 from knowledge_service.services.embedding import EmbeddingClient
 from knowledge_service.services.reranker import RerankerClient
-from knowledge_service.services.retriever import HybridRetriever
+from knowledge_service.services.retriever import HybridRetriever, RetrievalDiagnostics
 from knowledge_service.services.vector_store import VectorStore
+from knowledge_service.services.wiki_card import build_talent_wiki_card
 
 
 class KnowledgeService:
@@ -45,6 +48,19 @@ class KnowledgeService:
         count = self.store.upsert_document(document_id, chunks)
         return DocumentWriteResponse(document_id=document_id, chunk_count=count)
 
+    def upsert_talent_profile(
+        self, document_id: str, profile: TalentProfileUpsert
+    ) -> DocumentWriteResponse:
+        card = build_talent_wiki_card(document_id, profile)
+        return self.upsert(
+            document_id,
+            DocumentUpsert(
+                document_type="talent_profile",
+                content=card.content,
+                metadata=card.metadata,
+            ),
+        )
+
     def delete(self, document_id: str) -> None:
         self.store.delete_document(document_id)
 
@@ -58,15 +74,38 @@ class KnowledgeService:
         return SearchResponse(query=request.query, results=results, latency_ms=latency)
 
     def chat(self, request: SearchRequest) -> ChatResponse:
-        search_response = self.search(request)
-        results = search_response.results
+        response, _ = self.chat_with_diagnostics(request)
+        return response
+
+    def chat_with_diagnostics(
+        self, request: SearchRequest
+    ) -> tuple[ChatResponse, RetrievalDiagnostics]:
+        outcome = self.retriever.search_with_diagnostics(
+            query=request.query,
+            document_types=request.document_types,
+            metadata_filter=request.metadata_filter,
+            top_k=request.top_k,
+        )
+        response = self._build_chat_response(
+            query=request.query,
+            results=outcome.results,
+            latency_ms=outcome.latency_ms,
+        )
+        return response, outcome.diagnostics
+
+    def _build_chat_response(
+        self,
+        query: str,
+        results: list[SearchResult],
+        latency_ms: float,
+    ) -> ChatResponse:
         if not results or results[0].rerank_score < self.settings.knowledge_refusal_threshold:
             return ChatResponse(
-                query=request.query,
+                query=query,
                 answer="抱歉，知识库中没有找到足够可靠的相关内容。",
                 is_refused=True,
                 citations=[],
-                latency_ms=search_response.latency_ms,
+                latency_ms=latency_ms,
             )
 
         citations = [
@@ -86,9 +125,9 @@ class KnowledgeService:
             f"[来源: {top.document_id} - {top.metadata.get('section', '正文')}]"
         )
         return ChatResponse(
-            query=request.query,
+            query=query,
             answer=answer,
             is_refused=False,
             citations=citations,
-            latency_ms=search_response.latency_ms,
+            latency_ms=latency_ms,
         )

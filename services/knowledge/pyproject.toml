@@ -16,6 +16,10 @@ dependencies = [
     "uvicorn[standard]>=0.30",
 ]
 
+[project.scripts]
+knowledge-eval = "knowledge_service.evaluation.cli:main"
+knowledge-index-wiki = "knowledge_service.cli.index_wiki:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
