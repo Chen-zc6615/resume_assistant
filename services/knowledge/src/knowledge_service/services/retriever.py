@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from dataclasses import dataclass
 from typing import Any
 
 import jieba
@@ -11,6 +12,26 @@ from knowledge_service.models.schemas import SearchResult
 from knowledge_service.services.embedding import EmbeddingClient
 from knowledge_service.services.reranker import RerankerClient
 from knowledge_service.services.vector_store import VectorStore
+
+
+@dataclass(frozen=True)
+class RetrievalDiagnostics:
+    """一次检索在各阶段产生的有序切片 ID。"""
+
+    bm25_chunk_ids: list[str]
+    dense_chunk_ids: list[str]
+    rrf_chunk_ids: list[str]
+    reranked_chunk_ids: list[str]
+    reranked_scores: list[float]
+
+
+@dataclass(frozen=True)
+class RetrievalOutcome:
+    """带中间诊断数据的完整检索结果。"""
+
+    results: list[SearchResult]
+    latency_ms: float
+    diagnostics: RetrievalDiagnostics
 
 
 def tokenize(text: str) -> list[str]:
@@ -63,6 +84,23 @@ class HybridRetriever:
         metadata_filter: dict[str, Any] | None = None,
         top_k: int | None = None,
     ) -> tuple[list[SearchResult], float]:
+        """执行线上检索，保持原有返回契约不变。"""
+        outcome = self.search_with_diagnostics(
+            query=query,
+            document_types=document_types,
+            metadata_filter=metadata_filter,
+            top_k=top_k,
+        )
+        return outcome.results, outcome.latency_ms
+
+    def search_with_diagnostics(
+        self,
+        query: str,
+        document_types: list[str] | None = None,
+        metadata_filter: dict[str, Any] | None = None,
+        top_k: int | None = None,
+    ) -> RetrievalOutcome:
+        """执行检索并返回 BM25、Dense、RRF 与 Rerank 的完整排序轨迹。"""
         started = time.perf_counter()
         final_top_k = top_k or self.settings.knowledge_final_top_k
         rough_top_k = max(self.settings.knowledge_rough_top_k, final_top_k)
@@ -72,7 +110,17 @@ class HybridRetriever:
             if metadata_matches(chunk["metadata"], document_types, metadata_filter)
         ]
         if not all_chunks:
-            return [], round((time.perf_counter() - started) * 1000, 2)
+            return RetrievalOutcome(
+                results=[],
+                latency_ms=round((time.perf_counter() - started) * 1000, 2),
+                diagnostics=RetrievalDiagnostics(
+                    bm25_chunk_ids=[],
+                    dense_chunk_ids=[],
+                    rrf_chunk_ids=[],
+                    reranked_chunk_ids=[],
+                    reranked_scores=[],
+                ),
+            )
 
         tokenized = [tokenize(chunk["content"]) for chunk in all_chunks]
         bm25 = BM25Okapi(tokenized)
@@ -106,7 +154,7 @@ class HybridRetriever:
 
         ranked = sorted(
             zip(candidate_chunks, rerank_scores), key=lambda item: item[1], reverse=True
-        )[:final_top_k]
+        )
         results = [
             SearchResult(
                 chunk_id=chunk["chunk_id"],
@@ -116,7 +164,17 @@ class HybridRetriever:
                 metadata=chunk["metadata"],
                 rerank_score=round(float(score), 6),
             )
-            for chunk, score in ranked
+            for chunk, score in ranked[:final_top_k]
         ]
-        return results, round((time.perf_counter() - started) * 1000, 2)
+        return RetrievalOutcome(
+            results=results,
+            latency_ms=round((time.perf_counter() - started) * 1000, 2),
+            diagnostics=RetrievalDiagnostics(
+                bm25_chunk_ids=[all_chunks[index]["chunk_id"] for index in bm25_order],
+                dense_chunk_ids=[chunk["chunk_id"] for chunk in dense],
+                rrf_chunk_ids=candidate_ids,
+                reranked_chunk_ids=[chunk["chunk_id"] for chunk, _ in ranked],
+                reranked_scores=[round(float(score), 6) for _, score in ranked],
+            ),
+        )
 

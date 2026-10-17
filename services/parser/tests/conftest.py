@@ -7,9 +7,9 @@ import os
 # Settings 不强制模型 key（OCR 路径才用到），注入占位即可
 os.environ.setdefault("MODEL_API_KEY", "test-dummy")
 
-# tests/conftest.py -> 仓库根/evals/...
+# tests/conftest.py -> 仓库根/evals/resume_processing/resumes
 GOLDEN_DIR = os.path.join(
-    os.path.dirname(__file__), "..", "..", "..", "evals", "golden_datasets", "resumes"
+    os.path.dirname(__file__), "..", "..", "..", "evals", "resume_processing", "resumes"
 )
 
 

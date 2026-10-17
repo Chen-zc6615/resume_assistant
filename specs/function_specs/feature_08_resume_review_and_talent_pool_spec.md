@@ -34,11 +34,13 @@ HR 对原始简历、归一化事实、各岗位筛选结果和多岗位汇总�
 
 ReviewRecord：review_id、resume_id、normalization_version、job_screen_result_ids、reviewer_id、decision（confirmed/discarded/returned）、reason、changes、reviewed_at。
 
-TalentPoolEntry：pool_id、resume_id、source_requirement_id、source_job_id、note、created_by、created_at；同一简历最多存在一条有效沉淀记录，不复制归一化简历事实。
+TalentPoolEntry：pool_id、resume_id、source_requirement_id、source_job_id、note、created_by、created_at；同一简历最多存在一条有效沉淀记录，不复制归一化简历事实。知识库派生数据另记录 knowledge_sync_status（pending / syncing / success / failed）、knowledge_document_id、knowledge_chunk_count、knowledge_sync_error 和 knowledge_synced_at，不在人才库表中保存 Wiki 正文。
 
 确认通过的事务写入审核记录并将简历处理状态置为已完成，同时记录通过岗位；失败时全部回滚并保持可重试。沉淀人才库使用独立事务，只创建人才库关联，不改变简历处理状态和岗位筛选结论。
 
 人才库以 resume_id 唯一约束防止同一简历重复沉淀；不同文件属于同一候选人的情况只提示可能重复，不按姓名、电话自动合并。重复提交确认或沉淀请求应返回已有结果，不创建重复记录。
+
+人才沉淀提交成功后再同步脱敏归一化数据到知识库；知识库故障不得回滚人才沉淀事务。同步失败记录为 failed 并允许人工重试，同一 knowledge_document_id 使用幂等覆盖。知识库只接收检索所需事实，不接收电话、邮箱、PDF 原文/路径或 HR 内部备注。
 
 ## 5. 状态、接口与界面
 

@@ -8,6 +8,7 @@ from knowledge_service.models.schemas import (
     DocumentWriteResponse,
     SearchRequest,
     SearchResponse,
+    TalentProfileUpsert,
 )
 from knowledge_service.services.knowledge import KnowledgeService
 
@@ -34,6 +35,13 @@ def upsert_document(
     document_id: str, document: DocumentUpsert, request: Request
 ) -> DocumentWriteResponse:
     return service_from(request).upsert(document_id, document)
+
+
+@router.put("/api/v1/talent-profiles/{document_id}", response_model=DocumentWriteResponse)
+def upsert_talent_profile(
+    document_id: str, profile: TalentProfileUpsert, request: Request
+) -> DocumentWriteResponse:
+    return service_from(request).upsert_talent_profile(document_id, profile)
 
 
 @router.delete("/api/v1/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT)

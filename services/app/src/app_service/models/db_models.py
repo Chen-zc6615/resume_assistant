@@ -410,6 +410,12 @@ class TalentPool(Base, TimestampMixin):
     """沉淀候选人才库：HR 复核后暂不匹配但值得长期储备的候选人（一份简历一条）。"""
 
     __tablename__ = "talent_pool"
+    __table_args__ = (
+        CheckConstraint(
+            "knowledge_sync_status IN ('pending', 'syncing', 'success', 'failed')",
+            name="ck_talent_pool_knowledge_sync_status",
+        ),
+    )
 
     pool_id: Mapped[int] = mapped_column(IntPK, primary_key=True, autoincrement=True)
     resume_id: Mapped[int] = mapped_column(
@@ -421,6 +427,13 @@ class TalentPool(Base, TimestampMixin):
     source_job_id: Mapped[int | None] = mapped_column(ForeignKey("jobs.job_id"))
     note: Mapped[str | None] = mapped_column(Text)
     created_by: Mapped[str] = mapped_column(String(50), nullable=False)
+    knowledge_sync_status: Mapped[str] = mapped_column(
+        String(20), default="pending", server_default="pending", nullable=False
+    )
+    knowledge_document_id: Mapped[str | None] = mapped_column(String(100))
+    knowledge_chunk_count: Mapped[int | None] = mapped_column(Integer)
+    knowledge_sync_error: Mapped[str | None] = mapped_column(String(500))
+    knowledge_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     resume: Mapped["Resume"] = relationship()
     source_requirement: Mapped["Requirement | None"] = relationship()
