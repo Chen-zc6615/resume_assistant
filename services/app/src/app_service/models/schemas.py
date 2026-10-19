@@ -1,11 +1,3 @@
-"""Pydantic v2 契约：SPEC 实体契约 + API 请求/响应模型。
-
-实体契约部分（Job/EducationExperience/ProjectExperience/WorkExperience/
-ResumeProfile/ResumeProcessingResult）源自《技术SPEC架构说明书》维度一，保持校验规则不变。
-"""
-
-from __future__ import annotations
-
 from typing import Annotated, Literal
 
 from pydantic import (
@@ -453,3 +445,17 @@ class FilterRunOut(BaseModel):
     requirement_name: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+# ======================= Agent =======================
+class AgentChatRequest(BaseModel):
+    message: NoEmptyText
+
+
+class AgentToolTrace(BaseModel):
+    tool: str
+    arguements: dict
+    success: bool
+
+class AgentChatResponse(BaseModel):
+    answer: str
+    tool_traces: list[AgentToolTrace] = Field(default_factory=list)
