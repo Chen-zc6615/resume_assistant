@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 
-from app_service.api import jobs, parse, requirements, resume, screen, talent
+from app_service.api import agent, jobs, parse, requirements, resume, screen, talent
 from app_service.core.logger import setup_logging
 from app_service.db.session import init_db
 
@@ -58,6 +58,7 @@ def create_app() -> FastAPI:
     app.include_router(jobs.router, prefix="/api/jobs", tags=["岗位"])
     app.include_router(screen.router, prefix="/api/screening", tags=["初筛"])
     app.include_router(talent.router, prefix="/api/talent", tags=["人才库/面试"])
+    app.include_router(agent.router, prefix="/api/agent", tags=["招聘 Agent"])
 
     # 生产：托管前端构建产物（开发模式下走 Vite 5173，不冲突）
     if _DIST.is_dir():

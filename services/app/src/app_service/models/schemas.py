@@ -446,16 +446,39 @@ class FilterRunOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 # ======================= Agent =======================
 class AgentChatRequest(BaseModel):
-    message: NoEmptyText
+    message: NonEmptyText = Field(max_length=2000)
 
 
 class AgentToolTrace(BaseModel):
     tool: str
-    arguements: dict
+    arguments: dict[str, object]
     success: bool
+
 
 class AgentChatResponse(BaseModel):
     answer: str
     tool_traces: list[AgentToolTrace] = Field(default_factory=list)
+
+
+#======================= User Verify===================
+class LoginRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=100, strip_whitespace=True)
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_bytes(cls, password: str) -> str:
+        password_bytes = password.encode("utf-8")
+        if len(password_bytes) > 72:
+            raise ValueError("密码的 UTF-8 编码不能超过 72 字节")
+        return password
+
+
+class AuthUserOut(BaseModel):
+    user_id: int
+    username: str
+    display_name: str
+    model_config = ConfigDict(from_attributes=True)

@@ -50,6 +50,8 @@ class Settings(BaseSettings):
     # --- HR 用户（MVP 无登录，透传）---
     default_hr_id: str = "hr_admin"
 
+    auth_session_hours: int = 8
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -1,11 +1,3 @@
-"""SQLAlchemy ORM 数据模型。
-
-字段口径以 PRD 数据库表图为准，列名统一 snake_case；
-性别存 int（0-男 1-女，NULL=未知）；年月统一 VARCHAR(7) "YYYY-MM"。
-"""
-
-from __future__ import annotations
-
 from datetime import datetime
 
 from sqlalchemy import (
@@ -40,8 +32,6 @@ class TimestampMixin:
 
 
 class UserAccount(Base, TimestampMixin):
-    """内部 HR 用户账号。"""
-
     __tablename__ = "user_accounts"
     __table_args__ = (
         CheckConstraint(
