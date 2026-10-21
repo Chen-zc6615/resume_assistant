@@ -127,7 +127,7 @@ class AuthSession(Base):
         server_default=func.current_timestamp(),
     )
 
-    user: Mapped["UserAccount"] = relationship(
+    user: Mapped[UserAccount] = relationship(
         back_populates="sessions",
     )
 

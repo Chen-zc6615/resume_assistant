@@ -6,6 +6,7 @@ from pydantic import (
     ConfigDict,
     Field,
     StringConstraints,
+    field_validator,
     model_validator,
 )
 
@@ -465,7 +466,7 @@ class AgentChatResponse(BaseModel):
 
 #======================= User Verify===================
 class LoginRequest(BaseModel):
-    username: str = Field(min_length=1, max_length=100, strip_whitespace=True)
+    username: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100,)]
     password: str = Field(min_length=1, max_length=128)
 
     @field_validator("password")

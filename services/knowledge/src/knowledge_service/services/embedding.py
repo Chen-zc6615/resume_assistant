@@ -6,6 +6,9 @@ from knowledge_service.core.config import Settings
 
 
 class EmbeddingClient:
+    # DashScope embeddings 接口单次最多 10 条输入，超限返回 InvalidParameter
+    MAX_BATCH_SIZE = 10
+
     def __init__(self, settings: Settings):
         self.model = settings.embedding_model
         self.client = OpenAI(
@@ -18,9 +21,12 @@ class EmbeddingClient:
     def embed(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
-        response = self.client.embeddings.create(model=self.model, input=texts)
-        data = sorted(response.data, key=lambda item: item.index)
-        vectors = [item.embedding for item in data]
+        vectors: list[list[float]] = []
+        for start in range(0, len(texts), self.MAX_BATCH_SIZE):
+            batch = texts[start : start + self.MAX_BATCH_SIZE]
+            response = self.client.embeddings.create(model=self.model, input=batch)
+            data = sorted(response.data, key=lambda item: item.index)
+            vectors.extend(item.embedding for item in data)
         if len(vectors) != len(texts):
             raise RuntimeError(
                 f"Embedding 返回数量错误：请求 {len(texts)} 条，返回 {len(vectors)} 条"

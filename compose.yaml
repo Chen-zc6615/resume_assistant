@@ -76,6 +76,7 @@ services:
     environment:
       MODEL_API_KEY: ${MODEL_API_KEY:-${DASHSCOPE_API_KEY:-}}
       MODEL_BASE_URL: ${MODEL_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      OCR_MODEL: ${OCR_MODEL:-qwen-vl-max}
     ports:
       - "127.0.0.1:8002:8002"
     healthcheck:
@@ -100,6 +101,8 @@ services:
       KNOWLEDGE_DATA_DIR: /app/data
     volumes:
       - knowledge_data:/app/data
+      # 人才 Wiki 卡片 Markdown 副本落盘到宿主，供人工阅读与 git 管理
+      - ./data/wiki:/app/data/wiki
     ports:
       - "127.0.0.1:8001:8001"
     healthcheck:
