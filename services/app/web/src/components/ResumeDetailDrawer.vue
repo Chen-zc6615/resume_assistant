@@ -4,7 +4,7 @@
       <el-tabs v-model="tab" class="detail">
         <el-tab-pane label="📄 原始简历" name="pdf">
           <iframe :src="fileUrl(resume.resume_id)" class="pdf-frame" />
-          <div class="pdf-tip">无法显示？<el-link type="primary" :href="fileUrl(resume.resume_id)" target="_blank">新窗口打开原始 PDF</el-link></div>
+          <div class="pdf-tip text-xs text-ink-400">无法显示？<el-link type="primary" :href="fileUrl(resume.resume_id)" target="_blank">新窗口打开原始 PDF</el-link></div>
         </el-tab-pane>        <el-tab-pane label="📋 归一化数据" name="data">
           <el-descriptions :column="2" border size="small" class="page-card">
             <el-descriptions-item label="文件名">{{ resume.original_file_name }}</el-descriptions-item>
@@ -94,5 +94,5 @@ const fileUrl = resumeFileUrl
 .skill { margin-right: 4px; }
 .fail { color: var(--el-color-danger); }
 .pdf-frame { width: 100%; height: 82vh; border: 1px solid var(--el-border-color); border-radius: 4px; }
-.pdf-tip { margin-top: 6px; font-size: 12px; color: #909399; text-align: center; }
+.pdf-tip { margin-top: 6px; text-align: center; }
 </style>

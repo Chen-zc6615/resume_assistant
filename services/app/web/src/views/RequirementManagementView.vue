@@ -2,52 +2,52 @@
   <div class="space-y-5">
     <!-- 统计 -->
     <section class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-4">
-        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+      <div class="bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-shadow hover:shadow-sm">
+        <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
           <el-icon :size="20"><Tickets /></el-icon>
         </div>
         <div>
-          <div class="text-lg font-semibold text-slate-900">{{ requirements.length }}</div>
-          <div class="text-xs text-slate-500">招聘需求</div>
+          <div class="text-2xl font-semibold text-ink-900 tracking-tight">{{ requirements.length }}</div>
+          <div class="text-xs text-ink-500">招聘需求</div>
         </div>
       </div>
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-4">
-        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+      <div class="bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-shadow hover:shadow-sm">
+        <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
           <el-icon :size="20"><Briefcase /></el-icon>
         </div>
         <div>
-          <div class="text-lg font-semibold text-slate-900">{{ jobTotal }}</div>
-          <div class="text-xs text-slate-500">岗位总数</div>
+          <div class="text-2xl font-semibold text-ink-900 tracking-tight">{{ jobTotal }}</div>
+          <div class="text-xs text-ink-500">岗位总数</div>
         </div>
       </div>
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-4">
-        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+      <div class="bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-shadow hover:shadow-sm">
+        <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
           <el-icon :size="20"><VideoPlay /></el-icon>
         </div>
         <div>
-          <div class="text-lg font-semibold text-slate-900">{{ openJobs.length }}</div>
-          <div class="text-xs text-slate-500">招聘中岗位</div>
+          <div class="text-2xl font-semibold text-ink-900 tracking-tight">{{ openJobs.length }}</div>
+          <div class="text-xs text-ink-500">招聘中岗位</div>
         </div>
       </div>
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-4">
-        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+      <div class="bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-shadow hover:shadow-sm">
+        <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
           <el-icon :size="20"><Files /></el-icon>
         </div>
         <div>
-          <div class="text-lg font-semibold text-slate-900">{{ resumeTotal }}</div>
-          <div class="text-xs text-slate-500">累计收到简历（份）</div>
+          <div class="text-2xl font-semibold text-ink-900 tracking-tight">{{ resumeTotal }}</div>
+          <div class="text-xs text-ink-500">累计收到简历（份）</div>
         </div>
       </div>
     </section>
 
     <section class="grid grid-cols-1 xl:grid-cols-4 gap-5 items-start">
       <!-- 需求列表 -->
-      <div class="xl:col-span-1 bg-white rounded-2xl border border-slate-200 p-4">
+      <div class="xl:col-span-1 bg-card rounded-xl border border-hairline p-4">
         <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-slate-900">招聘需求</h3>
+          <h3 class="text-sm font-semibold text-ink-900">招聘需求</h3>
           <button
             type="button"
-            class="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center"
+            class="w-7 h-7 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-600 flex items-center justify-center"
             title="新增招聘需求" @click="openCreate"
           >
             <el-icon :size="14"><Plus /></el-icon>
@@ -58,54 +58,54 @@
             v-for="r in requirements" :key="r.requirement_id" type="button"
             class="w-full text-left rounded-xl border p-3.5 transition-colors"
             :class="r.requirement_id === selected?.requirement_id
-              ? 'border-blue-500 bg-blue-50/60'
-              : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50'"
+              ? 'border-brand-500 bg-brand-50/60'
+              : 'border-hairline hover:border-brand-200 hover:bg-page'"
             @click="select(r)"
           >
             <div class="flex items-center justify-between gap-2">
               <span
                 class="text-[11px] font-medium"
-                :class="r.requirement_id === selected?.requirement_id ? 'text-blue-600' : 'text-slate-400'"
+                :class="r.requirement_id === selected?.requirement_id ? 'text-brand-600' : 'text-ink-400'"
               >RQ-{{ String(r.requirement_id).padStart(4, '0') }}</span>
               <span
                 class="text-[11px] px-2 py-0.5 rounded-full"
-                :class="r.status === 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'"
+                :class="r.status === 0 ? 'bg-good-soft text-good' : 'bg-page text-ink-500'"
               >{{ r.status === 0 ? '进行中' : '已关闭' }}</span>
             </div>
-            <div class="mt-1.5 text-sm font-medium text-slate-800 leading-snug">{{ r.requirement_name }}</div>
-            <div class="mt-1.5 text-[11px] text-slate-400">
+            <div class="mt-1.5 text-sm font-medium text-ink-900 leading-snug">{{ r.requirement_name }}</div>
+            <div class="mt-1.5 text-[11px] text-ink-400">
               {{ r.job_count ?? 0 }} 个岗位<template v-if="r.deadline"> · 截止 {{ r.deadline }}</template>
             </div>
           </button>
-          <div v-if="!requirements.length" class="py-10 text-center text-xs text-slate-400">暂无需求，点击右上角创建</div>
+          <div v-if="!requirements.length" class="py-10 text-center text-xs text-ink-400">暂无需求，点击右上角创建</div>
         </div>
       </div>
 
       <!-- 需求详情与岗位 -->
-      <div class="xl:col-span-3 bg-white rounded-2xl border border-slate-200 overflow-hidden">
-        <div class="p-5 border-b border-slate-100">
+      <div class="xl:col-span-3 bg-card rounded-xl border border-hairline overflow-hidden">
+        <div class="p-5 border-b border-hairline-soft">
           <template v-if="selected">
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div class="flex items-center gap-2">
-                  <h2 class="text-base font-semibold text-slate-900">{{ selected.requirement_name }}</h2>
+                  <h2 class="text-base font-semibold text-ink-900">{{ selected.requirement_name }}</h2>
                   <span
                     class="text-[11px] px-2 py-0.5 rounded-full"
-                    :class="selected.status === 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'"
+                    :class="selected.status === 0 ? 'bg-good-soft text-good' : 'bg-page text-ink-500'"
                   >{{ selected.status === 0 ? '进行中' : '已关闭' }}</span>
                 </div>
-                <p class="text-xs text-slate-400 mt-2">
+                <p class="text-xs text-ink-400 mt-2">
                   用人部门 {{ selected.dept || '未指定' }} · 负责人 {{ selected.created_by }}
                   <template v-if="selected.deadline"> · 截止 {{ selected.deadline }}</template>
                 </p>
-                <p v-if="selected.description" class="text-xs text-slate-500 mt-2 leading-relaxed max-w-2xl">
+                <p v-if="selected.description" class="text-xs text-ink-500 mt-2 leading-relaxed max-w-2xl">
                   {{ selected.description }}
                 </p>
               </div>
               <div class="flex items-center gap-2">
                 <button
                   type="button"
-                  class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs
+                  class="px-3 py-2 rounded-lg bg-page hover:bg-hairline-soft text-ink-600 text-xs
                          flex items-center gap-1.5"
                   @click="openPool(selected)"
                 >
@@ -113,7 +113,7 @@
                 </button>
                 <button
                   type="button"
-                  class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs
+                  class="px-3 py-2 rounded-lg bg-page hover:bg-hairline-soft text-ink-600 text-xs
                          flex items-center gap-1.5"
                   @click="openEdit(selected)"
                 >
@@ -126,7 +126,7 @@
                   <template #reference>
                     <button
                       type="button"
-                      class="px-3 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs
+                      class="px-3 py-2 rounded-lg bg-critical-soft hover:opacity-80 text-critical text-xs
                              flex items-center gap-1.5"
                     >
                       <el-icon :size="14"><Delete /></el-icon>删除需求
@@ -136,13 +136,13 @@
               </div>
             </div>
           </template>
-          <p v-else class="text-sm text-slate-400">暂无招聘需求，请先创建。</p>
+          <p v-else class="text-sm text-ink-400">暂无招聘需求，请先创建。</p>
         </div>
 
         <div class="px-5 py-4 flex items-center justify-between">
           <div>
-            <h3 class="text-sm font-semibold text-slate-900">岗位列表</h3>
-            <p class="text-xs text-slate-400 mt-1">岗位硬性条件将用于简历筛选中的「岗位硬性条件初筛」环节</p>
+            <h3 class="text-sm font-semibold text-ink-900">岗位列表</h3>
+            <p class="text-xs text-ink-400 mt-1">岗位硬性条件将用于简历筛选中的「岗位硬性条件初筛」环节</p>
           </div>
           <div class="flex items-center gap-2">
             <el-popconfirm title="把需求池内可筛简历重新分配到全部开放岗位并执行初筛？" @confirm="doReassign">
@@ -154,58 +154,58 @@
           </div>
         </div>
 
-        <div class="overflow-x-auto border-t border-slate-100">
+        <div class="overflow-x-auto border-t border-hairline-soft">
           <table class="w-full min-w-[900px] text-sm">
             <thead>
-              <tr class="bg-slate-50 text-xs text-slate-500">
-                <th class="text-left font-medium px-5 py-3">岗位</th>
-                <th class="text-left font-medium px-4 py-3 w-24">招聘人数</th>
-                <th class="text-left font-medium px-4 py-3">硬性条件</th>
-                <th class="text-left font-medium px-4 py-3 w-24">收到简历</th>
-                <th class="text-left font-medium px-4 py-3 w-24">岗位状态</th>
-                <th class="text-right font-medium px-5 py-3 w-56">操作</th>
+              <tr class="bg-page">
+                <th class="text-left font-medium text-[11px] text-ink-400 px-5 py-3">岗位</th>
+                <th class="text-left font-medium text-[11px] text-ink-400 px-4 py-3 w-24">招聘人数</th>
+                <th class="text-left font-medium text-[11px] text-ink-400 px-4 py-3">硬性条件</th>
+                <th class="text-left font-medium text-[11px] text-ink-400 px-4 py-3 w-24">收到简历</th>
+                <th class="text-left font-medium text-[11px] text-ink-400 px-4 py-3 w-24">岗位状态</th>
+                <th class="text-right font-medium text-[11px] text-ink-400 px-5 py-3 w-56">操作</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100">
-              <tr v-for="job in jobs" :key="job.job_id" class="hover:bg-slate-50/70">
+            <tbody class="divide-y divide-hairline-soft">
+              <tr v-for="job in jobs" :key="job.job_id" class="hover:bg-hairline-soft">
                 <td class="px-5 py-4">
                   <div class="flex items-center gap-2">
-                    <span v-if="job.job_code" class="text-[11px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 font-medium">
+                    <span v-if="job.job_code" class="text-[11px] px-2 py-0.5 rounded-md bg-brand-50 text-brand-600 font-medium">
                       {{ job.job_code }}
                     </span>
-                    <span class="text-sm text-slate-800">{{ job.job_name }}</span>
+                    <span class="text-sm text-ink-900">{{ job.job_name }}</span>
                   </div>
-                  <div v-if="job.major" class="text-[11px] text-slate-400 mt-1">{{ job.major }}</div>
+                  <div v-if="job.major" class="text-[11px] text-ink-400 mt-1">{{ job.major }}</div>
                 </td>
-                <td class="px-4 py-4 text-slate-600">{{ job.headcount ?? '—' }}</td>
+                <td class="px-4 py-4 text-ink-600">{{ job.headcount ?? '—' }}</td>
                 <td class="px-4 py-4">
                   <div class="flex flex-wrap items-center gap-1.5 max-w-md">
-                    <span class="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                    <span class="text-[11px] px-2 py-0.5 rounded-md bg-page text-ink-600">
                       学历：{{ job.job_min_degree || '不限' }}
                     </span>
-                    <span class="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                    <span class="text-[11px] px-2 py-0.5 rounded-md bg-page text-ink-600">
                       年限：{{ job.job_min_exp_years != null ? job.job_min_exp_years + ' 年' : '不限' }}
                     </span>
-                    <span v-if="job.job_required_skills?.length" class="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                    <span v-if="job.job_required_skills?.length" class="text-[11px] px-2 py-0.5 rounded-md bg-page text-ink-600">
                       技能：{{ job.job_required_skills.join(' / ') }}
                     </span>
-                    <span v-if="job.bonus_items?.length" class="text-[11px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-600">
+                    <span v-if="job.bonus_items?.length" class="text-[11px] px-2 py-0.5 rounded-md bg-warn-soft text-warn">
                       加分项 {{ job.bonus_items.length }} 项
                     </span>
-                    <button type="button" class="text-[11px] text-blue-600 hover:text-blue-700 font-medium" @click="openHardDrawer(job)">
+                    <button type="button" class="text-[11px] text-brand-600 hover:text-brand-700 font-medium" @click="openHardDrawer(job)">
                       查看全部
                     </button>
                   </div>
                 </td>
                 <td class="px-4 py-4">
-                  <span class="text-sm text-slate-700">{{ groupCounts[job.job_id] ?? 0 }}</span>
-                  <span class="text-[11px] text-slate-400"> 份</span>
+                  <span class="text-sm text-ink-600">{{ groupCounts[job.job_id] ?? 0 }}</span>
+                  <span class="text-[11px] text-ink-400"> 份</span>
                 </td>
                 <td class="px-4 py-4">
                   <button
                     type="button"
                     class="text-[11px] px-2.5 py-1 rounded-full hover:opacity-80"
-                    :class="job.job_status === 1 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'"
+                    :class="job.job_status === 1 ? 'bg-good-soft text-good' : 'bg-page text-ink-500'"
                     @click="toggleJob(job)"
                   >{{ ['草稿', '招聘中', '已关闭'][job.job_status] }}</button>
                 </td>
@@ -221,8 +221,8 @@
               </tr>
               <tr v-if="!jobs.length">
                 <td colspan="6" class="px-5 py-14 text-center">
-                  <p class="text-sm text-slate-500">该需求下还没有岗位</p>
-                  <p class="text-xs text-slate-400 mt-1">点击右上角「新增岗位」为本次招聘添加岗位与硬性条件</p>
+                  <p class="text-sm text-ink-500">该需求下还没有岗位</p>
+                  <p class="text-xs text-ink-400 mt-1">点击右上角「新增岗位」为本次招聘添加岗位与硬性条件</p>
                 </td>
               </tr>
             </tbody>
@@ -278,8 +278,8 @@
           <el-input v-model="jobForm.job_jd" type="textarea" :rows="3"
             placeholder="粘贴岗位 JD 原文，便于系统理解岗位职责、任职要求与加分方向" />
         </el-form-item>
-        <div class="rounded-xl bg-slate-50 p-4 space-y-4">
-          <div class="text-xs font-medium text-slate-600">岗位硬性条件（初筛判定依据）</div>
+        <div class="rounded-xl bg-page p-4 space-y-4">
+          <div class="text-xs font-medium text-ink-600">岗位硬性条件（初筛判定依据）</div>
           <div class="grid grid-cols-2 gap-x-4">
             <el-form-item label="学历要求">
               <el-select v-model="jobForm.job_min_degree" clearable placeholder="不限">
@@ -300,8 +300,8 @@
             </el-form-item>
           </div>
         </div>
-        <div class="rounded-xl bg-slate-50 p-4 space-y-4 mt-4">
-          <div class="text-xs font-medium text-slate-600">加分项（不参与硬性条件初筛判定）</div>
+        <div class="rounded-xl bg-page p-4 space-y-4 mt-4">
+          <div class="text-xs font-medium text-ink-600">加分项（不参与硬性条件初筛判定）</div>
           <div class="grid grid-cols-2 gap-x-4">
             <el-form-item label="加分技能">
               <el-select v-model="jobForm.job_optional_skills" multiple filterable allow-create
@@ -315,7 +315,7 @@
             <el-input v-model="bonusLang" placeholder="例如：英语可读写技术文档" />
           </el-form-item>
         </div>
-        <p class="text-xs text-slate-400 mt-3">
+        <p class="text-xs text-ink-400 mt-3">
           提示：硬性条件由系统在初筛中逐条判定，不满足时自动标记未通过并给出原因；加分项仅作匹配参考，不参与一票否决。
         </p>
       </el-form>
@@ -328,29 +328,29 @@
     <!-- 硬性条件抽屉 -->
     <el-drawer v-model="hardDrawer" size="460px" :title="`岗位硬性条件 — ${hardViewing?.job_name ?? ''}`">
       <div v-if="hardViewing" class="space-y-3">
-        <div class="rounded-xl bg-blue-50/60 border border-blue-100 p-4">
-          <p class="text-xs text-blue-700 leading-relaxed">
+        <div class="rounded-xl bg-brand-50/60 border border-brand-100 p-4">
+          <p class="text-xs text-brand-700 leading-relaxed">
             以下为岗位硬性条件，全部通过才判定为初筛通过；缺失关键字段时系统将转为待 HR 人工复核。加分项不参与硬性判定，仅作匹配参考。
           </p>
         </div>
-        <div class="rounded-xl border border-slate-200 p-4">
+        <div class="rounded-xl border border-hairline p-4">
           <div class="flex items-center gap-1.5">
-            <el-icon class="text-indigo-600" :size="16"><Document /></el-icon>
-            <span class="text-sm font-medium text-slate-800">岗位 JD</span>
+            <el-icon class="text-ink-400" :size="16"><Document /></el-icon>
+            <span class="text-sm font-medium text-ink-900">岗位 JD</span>
           </div>
-          <p class="text-xs text-slate-500 mt-2 leading-relaxed whitespace-pre-wrap">{{ hardViewing.job_jd || '未填写' }}</p>
+          <p class="text-xs text-ink-500 mt-2 leading-relaxed whitespace-pre-wrap">{{ hardViewing.job_jd || '未填写' }}</p>
         </div>
-        <div class="text-xs font-medium text-slate-500 mt-3">硬性条件</div>
+        <div class="text-xs font-medium text-ink-500 mt-3">硬性条件</div>
         <div v-for="(item, i) in hardItems(hardViewing)" :key="i"
-          class="rounded-xl border border-slate-200 p-4">
+          class="rounded-xl border border-hairline p-4">
           <div class="flex items-center justify-between">
-            <span class="text-sm font-medium text-slate-800">{{ item.label }}</span>
+            <span class="text-sm font-medium text-ink-900">{{ item.label }}</span>
             <span class="text-[11px] px-2 py-0.5 rounded-full"
-              :class="item.required ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'">
+              :class="item.required ? 'bg-critical-soft text-critical' : 'bg-page text-ink-500'">
               {{ item.required ? '硬性' : '参考' }}
             </span>
           </div>
-          <p class="text-xs text-slate-500 mt-2 leading-relaxed">{{ item.value }}</p>
+          <p class="text-xs text-ink-500 mt-2 leading-relaxed">{{ item.value }}</p>
         </div>
       </div>
     </el-drawer>

@@ -4,26 +4,43 @@ import httpx
 
 from knowledge_service.core.config import Settings
 
+# DashScope 官方未提供 OpenAI 兼容的 /rerank，只有原生接口
+_DASHSCOPE_NATIVE_RERANK_URL = (
+    "https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank"
+)
+
 
 class RerankerClient:
     def __init__(self, settings: Settings):
         self.model = settings.rerank_model
-        self.url = f"{settings.model_base_url.rstrip('/')}/rerank"
         self.api_key = settings.model_api_key
         self.timeout = settings.model_timeout_seconds
+        self.native_dashscope = "dashscope.aliyuncs.com" in settings.model_base_url
+        if self.native_dashscope:
+            self.url = _DASHSCOPE_NATIVE_RERANK_URL
+        else:
+            self.url = f"{settings.model_base_url.rstrip('/')}/rerank"
 
     def score(self, query: str, documents: list[str]) -> list[float]:
         if not documents:
             return []
-        response = httpx.post(
-            self.url,
-            headers={"Authorization": f"Bearer {self.api_key}"},
-            json={
+        if self.native_dashscope:
+            body = {
+                "model": self.model,
+                "input": {"query": query, "documents": documents},
+                "top_n": len(documents),
+            }
+        else:
+            body = {
                 "model": self.model,
                 "query": query,
                 "documents": documents,
                 "top_n": len(documents),
-            },
+            }
+        response = httpx.post(
+            self.url,
+            headers={"Authorization": f"Bearer {self.api_key}"},
+            json=body,
             timeout=self.timeout,
         )
         response.raise_for_status()

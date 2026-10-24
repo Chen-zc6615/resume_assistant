@@ -6,15 +6,25 @@
 from __future__ import annotations
 
 import os
+import sys
 import tempfile
+
+# 测试库地址。drop_all/create_all 夹具会清库，绝不允许指向开发/生产库。
+TEST_DATABASE_URL = "postgresql+psycopg://resume_test:resume_test@127.0.0.1:55432/resume_test"
 
 _TMP = tempfile.mkdtemp(prefix="smartresume_test_")
 os.environ.setdefault("DATA_DIR", _TMP)
-os.environ.setdefault(
-    "DATABASE_URL",
-    "postgresql+psycopg://resume_test:resume_test@127.0.0.1:55432/resume_test",
-)
+os.environ["DATABASE_URL"] = TEST_DATABASE_URL  # 强制覆盖（setdefault 会被 shell export 的生产库变量穿透）
 os.environ.setdefault("UPLOAD_DIR", os.path.join(_TMP, "uploads"))
+
+_injected = os.environ["DATABASE_URL"]
+if not (_injected.startswith("postgresql+psycopg://resume_test@") or ":55432/" in _injected):
+    print(
+        f"FATAL: 测试 DATABASE_URL 指向了非测试库 {_injected!r}，"
+        "集成测试会 drop_all 清库，拒绝执行。",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
 
 # 简历处理黄金样本路径（tests/conftest.py -> 仓库根/evals/...）
 GOLDEN_DIR = os.path.join(

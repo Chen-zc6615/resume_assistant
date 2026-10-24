@@ -1,10 +1,3 @@
-"""大模型客户端封装：DashScope OpenAI 兼容模式（qwen-plus 归一化提取）。
-
-扫描件 OCR 已随解析能力迁移到独立的解析服务，本模块只负责归一化文本提取。
-"""
-
-from __future__ import annotations
-
 from openai import OpenAI
 
 from app_service.core.config import get_settings

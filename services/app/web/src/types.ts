@@ -56,7 +56,6 @@ export interface ProjectExperience {
 }
 
 export interface ResumeProfileData {
-  profile_id: number | null
   resume_id: number
   name: string
   gender: number | null
@@ -167,7 +166,6 @@ export interface FilterResult {
   result_id: number
   run_id: number
   resume_id: number
-  profile_id: number | null
   result: 'PASS' | 'REJECT' | 'PENDING_REVIEW'
   reasons: ReasonItem[]
   name: string | null
@@ -201,8 +199,57 @@ export interface TalentPoolEntry {
   created_by: string
   created_at: string | null
   knowledge_sync_status: 'pending' | 'syncing' | 'success' | 'failed'
-  knowledge_document_id: string | null
+  knowledge_talent_card_id: string | null
   knowledge_chunk_count: number | null
   knowledge_sync_error: string | null
   knowledge_synced_at: string | null
+}
+
+export interface TaskToolTrace {
+  tool: string
+  arguments: Record<string, unknown>
+  success: boolean
+  result: Record<string, unknown> | null
+}
+
+export interface TaskMessage {
+  message_id: number
+  task_id: number
+  role: 'user' | 'assistant'
+  content: string
+  tool_traces: TaskToolTrace[]
+  created_at: string
+}
+
+export interface TaskAction {
+  action_id: number
+  task_id: number
+  action_type: string
+  status: 'pending' | 'approved' | 'rejected' | 'executed' | 'failed'
+  payload: Record<string, unknown>
+  result: Record<string, unknown> | null
+  decision_reason: string | null
+  decided_by: string | null
+  decided_at: string | null
+  created_at: string
+}
+
+export interface Task {
+  task_id: number
+  title: string
+  status: 'active' | 'archived'
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TaskDetail extends Task {
+  messages: TaskMessage[]
+  actions: TaskAction[]
+}
+
+export interface TaskMessageResponse {
+  user_message: TaskMessage
+  assistant_message: TaskMessage
+  new_actions: TaskAction[]
 }

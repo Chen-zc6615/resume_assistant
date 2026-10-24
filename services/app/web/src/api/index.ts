@@ -14,19 +14,57 @@ import type {
   ResumeDetail,
   ResumeProfileData,
   TalentPoolEntry,
+  Task,
+  TaskAction,
+  TaskDetail,
+  TaskMessageResponse,
   UploadResponse,
 } from '../types'
 
 const http = axios.create({ baseURL: '/api', timeout: 60000 })
+
+// ---- 登录会话令牌（Bearer，存 localStorage；非 Cookie 模式无 CSRF 面）----
+const TOKEN_KEY = 'sr_session_token'
+export const getToken = () => localStorage.getItem(TOKEN_KEY)
+export const setToken = (token: string | null) => {
+  if (token) localStorage.setItem(TOKEN_KEY, token)
+  else localStorage.removeItem(TOKEN_KEY)
+}
+
+http.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
 
 http.interceptors.response.use(
   (resp) => resp,
   (err) => {
     const detail = err.response?.data?.detail
     if (detail) err.friendly = typeof detail === 'string' ? detail : JSON.stringify(detail)
+    // 会话过期/未登录：清除本地态并回登录页（登录接口自身的 401 是凭据错误，不跳转）
+    if (err.response?.status === 401 && !err.config?.url?.includes('/auth/login')) {
+      setToken(null)
+      if (location.pathname !== '/login') location.assign('/login')
+    }
     return Promise.reject(err)
   },
 )
+
+// ---- 认证 ----
+export interface LoginResponse {
+  user: { user_id: number; username: string; display_name: string }
+  session_token: string
+  expires_at: string
+}
+
+export const login = (payload: { username: string; password: string }) =>
+  http.post<LoginResponse>('/auth/login', payload).then((r) => r.data)
+
+export const logout = () => http.post('/auth/logout').then((r) => r.data)
+
+export const authMe = () =>
+  http.get<LoginResponse['user']>('/auth/me').then((r) => r.data)
 
 // ---- 简历 ----
 export const uploadResumes = (files: File[], hrId: string, requirementId: number) => {
@@ -88,7 +126,7 @@ export const removeFromTalentPool = (poolId: number) =>
   http.delete(`/talent/pool/${poolId}`).then((r) => r.data)
 
 export const syncTalentKnowledge = (poolId: number) =>
-  http.post<{ ok: boolean; document_id: string; chunk_count: number }>(
+  http.post<{ ok: boolean; talent_card_id: string; chunk_count: number }>(
     `/talent/pool/${poolId}/sync-knowledge`,
   ).then((r) => r.data)
 
@@ -149,5 +187,103 @@ export const runResults = (runId: number) =>
   http.get<FilterResult[]>(`/screening/runs/${runId}/results`).then((r) => r.data)
 
 export const runExportUrl = (runId: number) => `/api/screening/runs/${runId}/export.csv`
+
+// ---- 任务 ----
+export const listTasks = () => http.get<Task[]>('/tasks').then((r) => r.data)
+
+export const createTask = (title?: string) =>
+  http.post<Task>('/tasks', { title: title || null }).then((r) => r.data)
+
+export const getTask = (taskId: number) =>
+  http.get<TaskDetail>(`/tasks/${taskId}`).then((r) => r.data)
+
+export const renameTask = (taskId: number, title: string) =>
+  http.patch<Task>(`/tasks/${taskId}`, { title }).then((r) => r.data)
+
+export const deleteTask = (taskId: number) => http.delete(`/tasks/${taskId}`)
+
+export const sendTaskMessage = (taskId: number, message: string) =>
+  http.post<TaskMessageResponse>(`/tasks/${taskId}/messages`, { message }).then((r) => r.data)
+
+export interface TaskStreamEvent {
+  type: 'delta' | 'tool' | 'done' | 'error'
+  text?: string
+  name?: string
+  success?: boolean
+  payload?: TaskMessageResponse
+  detail?: string
+  status?: number
+}
+
+/**
+ * 流式发消息（SSE 打字机）。逐事件回调 onEvent，done 时 resolve 完整落库结果。
+ * 404/422 等未打开流就失败的错误走 reject（与 axios 同样挂 friendly）。
+ */
+export async function sendTaskMessageStream(
+  taskId: number,
+  message: string,
+  onEvent: (event: TaskStreamEvent) => void,
+): Promise<TaskMessageResponse> {
+  const resp = await fetch(`/api/tasks/${taskId}/messages/stream`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message }),
+  })
+  if (!resp.ok) {
+    const detail = await resp.json().catch(() => null)
+    const error: any = new Error('任务执行失败')
+    error.friendly = detail?.detail || `请求失败（${resp.status}）`
+    throw error
+  }
+  if (!resp.body) throw new Error('当前浏览器不支持流式响应')
+
+  const reader = resp.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let final: TaskMessageResponse | null = null
+  let streamError: string | null = null
+
+  for (; ;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const frames = buffer.split('\n\n')
+    buffer = frames.pop() || ''
+    for (const frame of frames) {
+      const line = frame.split('\n').find((l) => l.startsWith('data: '))
+      if (!line) continue
+      const event: TaskStreamEvent = JSON.parse(line.slice(6))
+      if (event.type === 'done') {
+        final = event.payload as TaskMessageResponse
+      } else if (event.type === 'error') {
+        streamError = event.detail || '任务执行失败'
+      } else {
+        onEvent(event)
+      }
+    }
+  }
+
+  if (streamError) {
+    const error: any = new Error(streamError)
+    error.friendly = streamError
+    throw error
+  }
+  if (!final) {
+    const error: any = new Error('流式响应意外中断')
+    error.friendly = '流式响应意外中断，请重试'
+    throw error
+  }
+  return final
+}
+
+export const decideTaskAction = (
+  taskId: number,
+  actionId: number,
+  approved: boolean,
+  reason?: string,
+) => http.post<TaskAction>(`/tasks/${taskId}/actions/${actionId}/decision`, {
+  approved,
+  reason: reason || null,
+}).then((r) => r.data)
 
 export default http
