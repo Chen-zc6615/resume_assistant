@@ -1,6 +1,6 @@
 import pytest
-from pydantic import ValidationError
 from app_service.models.schemas import LoginRequest
+from pydantic import ValidationError
 
 
 def test_valid_login_request():

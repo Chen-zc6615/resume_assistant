@@ -8,6 +8,7 @@ from app_service.core.auth_security import (
     verify_token,
 )
 
+
 def test_normalize_username():
     assert normalize_username(" HR_Admin ") == "hr_admin"
     assert normalize_username("hr_user") == "hr_user"

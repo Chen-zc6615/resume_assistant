@@ -3,8 +3,6 @@
 from datetime import timedelta
 
 import pytest
-from sqlalchemy import select
-
 from app_service.core.auth_security import hash_password, verify_token
 from app_service.db.base import Base
 from app_service.db.session import SessionLocal, engine
@@ -19,7 +17,7 @@ from app_service.services.auth_service import (
     utc_now,
     validate_csrf_token,
 )
-
+from sqlalchemy import select
 
 TEST_PASSWORD = "CorrectPassword123!"
 TEST_PASSWORD_HASH = hash_password(TEST_PASSWORD)

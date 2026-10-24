@@ -170,9 +170,7 @@ def build_talent_wiki_card(document_id: str, profile: TalentProfileUpsert) -> Wi
 
     frontmatter = ["---"]
     for key, value in metadata.items():
-        if isinstance(value, str):
-            encoded = json.dumps(value, ensure_ascii=False)
-        elif isinstance(value, list):
+        if isinstance(value, (str, list)):
             encoded = json.dumps(value, ensure_ascii=False)
         else:
             encoded = str(value)
