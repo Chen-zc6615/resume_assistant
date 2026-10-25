@@ -1,17 +1,17 @@
 <template>
   <div class="space-y-5">
     <!-- 筛选条 -->
-    <section class="bg-white rounded-2xl border border-slate-200 p-5">
+    <section class="bg-card rounded-xl border border-hairline p-5">
       <div class="flex flex-wrap items-center gap-3">
         <div class="flex items-center gap-3">
-          <label class="text-xs text-slate-500">招聘需求</label>
+          <label class="text-xs text-ink-500">招聘需求</label>
           <el-select v-model="demandId" class="w-72" placeholder="选择需求" @change="onDemandChange">
             <el-option v-for="r in requirements" :key="r.requirement_id" :value="r.requirement_id"
               :label="`RQ-${String(r.requirement_id).padStart(4, '0')} · ${r.requirement_name}`" />
           </el-select>
         </div>
         <div class="flex items-center gap-3">
-          <label class="text-xs text-slate-500">目标岗位</label>
+          <label class="text-xs text-ink-500">目标岗位</label>
           <el-select v-model="jobId" class="w-64" placeholder="全部岗位" @change="loadResults">
             <el-option :value="null" label="全部岗位（并集）" />
             <el-option v-for="j in jobsOfDemand" :key="j.job_id" :value="j.job_id"
@@ -22,7 +22,7 @@
           <el-button size="small" @click="load">刷新</el-button>
         </div>
       </div>
-      <p class="text-[11px] text-slate-400 mt-3">
+      <p class="text-[11px] text-ink-400 mt-3">
         说明：选「全部岗位」展示每个岗位最新判定结果的并集（同一候选人在多岗各有一条判定）；未通过附判定原因，缺失关键字的简历转待人工复核。
       </p>
     </section>
@@ -31,125 +31,125 @@
     <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <button
         type="button"
-        class="text-left bg-white rounded-2xl border p-5 transition-colors"
-        :class="tab === 'pass' ? 'border-emerald-400' : 'border-slate-200 hover:border-emerald-300'"
+        class="text-left bg-card rounded-xl border p-5 transition-shadow hover:shadow-sm"
+        :class="tab === 'pass' ? 'border-good' : 'border-hairline hover:border-good'"
         @click="tab = 'pass'"
       >
         <div class="flex items-center justify-between">
-          <span class="text-xs text-slate-500">初筛通过</span>
-          <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <span class="text-xs text-ink-500">初筛通过</span>
+          <span class="w-8 h-8 rounded-lg bg-good-soft text-good flex items-center justify-center">
             <el-icon :size="18"><CircleCheck /></el-icon>
           </span>
         </div>
-        <div class="mt-3 text-2xl font-semibold text-slate-900">{{ countOf('PASS') }} <span class="text-sm font-normal text-slate-400">份</span></div>
-        <div class="text-[11px] text-emerald-600 mt-1">硬性条件全部通过，待 HR 审核入库</div>
+        <div class="mt-3 text-2xl font-semibold text-ink-900 tracking-tight">{{ countOf('PASS') }} <span class="text-sm font-normal text-ink-400">份</span></div>
+        <div class="text-[11px] text-good mt-1">硬性条件全部通过，待 HR 审核入库</div>
       </button>
       <button
         type="button"
-        class="text-left bg-white rounded-2xl border p-5 transition-colors"
-        :class="tab === 'fail' ? 'border-rose-400' : 'border-slate-200 hover:border-rose-300'"
+        class="text-left bg-card rounded-xl border p-5 transition-shadow hover:shadow-sm"
+        :class="tab === 'fail' ? 'border-critical' : 'border-hairline hover:border-critical'"
         @click="tab = 'fail'"
       >
         <div class="flex items-center justify-between">
-          <span class="text-xs text-slate-500">初筛未通过</span>
-          <span class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+          <span class="text-xs text-ink-500">初筛未通过</span>
+          <span class="w-8 h-8 rounded-lg bg-critical-soft text-critical flex items-center justify-center">
             <el-icon :size="18"><CircleClose /></el-icon>
           </span>
         </div>
-        <div class="mt-3 text-2xl font-semibold text-slate-900">{{ countOf('REJECT') }} <span class="text-sm font-normal text-slate-400">份</span></div>
-        <div class="text-[11px] text-rose-500 mt-1">附判定原因（全部岗位均不满足）</div>
+        <div class="mt-3 text-2xl font-semibold text-ink-900 tracking-tight">{{ countOf('REJECT') }} <span class="text-sm font-normal text-ink-400">份</span></div>
+        <div class="text-[11px] text-critical mt-1">附判定原因（全部岗位均不满足）</div>
       </button>
       <button
         type="button"
-        class="text-left bg-white rounded-2xl border p-5 transition-colors"
-        :class="tab === 'review' ? 'border-amber-400' : 'border-slate-200 hover:border-amber-300'"
+        class="text-left bg-card rounded-xl border p-5 transition-shadow hover:shadow-sm"
+        :class="tab === 'review' ? 'border-warn' : 'border-hairline hover:border-warn'"
         @click="tab = 'review'"
       >
         <div class="flex items-center justify-between">
-          <span class="text-xs text-slate-500">待人工复核</span>
-          <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+          <span class="text-xs text-ink-500">待人工复核</span>
+          <span class="w-8 h-8 rounded-lg bg-warn-soft text-warn flex items-center justify-center">
             <el-icon :size="18"><User /></el-icon>
           </span>
         </div>
-        <div class="mt-3 text-2xl font-semibold text-slate-900">{{ countOf('PENDING_REVIEW') }} <span class="text-sm font-normal text-slate-400">份</span></div>
-        <div class="text-[11px] text-amber-600 mt-1">信息不足无法判定，需 HR 人工处理</div>
+        <div class="mt-3 text-2xl font-semibold text-ink-900 tracking-tight">{{ countOf('PENDING_REVIEW') }} <span class="text-sm font-normal text-ink-400">份</span></div>
+        <div class="text-[11px] text-warn mt-1">信息不足无法判定，需 HR 人工处理</div>
       </button>
     </section>
 
     <!-- 结果表 -->
-    <section class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-      <div class="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100">
-        <div class="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100">
+    <section class="bg-card rounded-xl border border-hairline overflow-hidden">
+      <div class="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-hairline-soft">
+        <div class="flex items-center gap-1.5 p-1 rounded-xl bg-page">
           <button
             v-for="t in TABS" :key="t.key" type="button"
             class="px-3.5 py-1.5 rounded-lg text-xs font-medium"
-            :class="tab === t.key ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'"
+            :class="tab === t.key ? 'bg-card text-ink-900 shadow-sm' : 'text-ink-500'"
             @click="tab = t.key"
           >{{ t.label }}</button>
         </div>
-        <div class="flex items-center gap-2 text-[11px] text-slate-400">
-          <span>当前视图：<span class="text-slate-600">{{ viewLabel }}</span></span>
+        <div class="flex items-center gap-2 text-[11px] text-ink-400">
+          <span>当前视图：<span class="text-ink-600">{{ viewLabel }}</span></span>
           <span>·</span>
-          <span>共 <span class="text-slate-600">{{ filteredRows.length }}</span> 位候选人</span>
+          <span>共 <span class="text-ink-600">{{ filteredRows.length }}</span> 位候选人</span>
         </div>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full min-w-[1100px] text-sm">
           <thead>
-            <tr class="bg-slate-50 text-xs text-slate-500">
-              <th class="text-left font-medium px-6 py-3 w-56">候选人</th>
-              <th class="text-left font-medium px-4 py-3 w-44">目标岗位</th>
-              <th class="text-left font-medium px-4 py-3 w-36">初筛结果</th>
-              <th class="text-left font-medium px-4 py-3">判定原因</th>
-              <th class="text-left font-medium px-4 py-3 w-64">缺失字段 / 待复核说明</th>
-              <th class="text-right font-medium px-6 py-3 w-64">操作</th>
+            <tr class="bg-page">
+              <th class="text-left text-[11px] font-medium text-ink-400 px-6 py-3 w-56">候选人</th>
+              <th class="text-left text-[11px] font-medium text-ink-400 px-4 py-3 w-44">目标岗位</th>
+              <th class="text-left text-[11px] font-medium text-ink-400 px-4 py-3 w-36">初筛结果</th>
+              <th class="text-left text-[11px] font-medium text-ink-400 px-4 py-3">判定原因</th>
+              <th class="text-left text-[11px] font-medium text-ink-400 px-4 py-3 w-64">缺失字段 / 待复核说明</th>
+              <th class="text-right text-[11px] font-medium text-ink-400 px-6 py-3 w-64">操作</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr v-for="row in filteredRows" :key="row.result_id" class="hover:bg-slate-50/70">
+          <tbody class="divide-y divide-hairline-soft">
+            <tr v-for="row in filteredRows" :key="row.result_id" class="hover:bg-hairline-soft">
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                  <span class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold flex items-center justify-center shrink-0">
+                  <span class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 text-xs font-semibold flex items-center justify-center shrink-0">
                     {{ (row.name || '候')[0] }}
                   </span>
                   <span class="min-w-0">
-                    <span class="block text-sm text-slate-800">{{ row.name || '未归一化' }}</span>
-                    <span class="block text-[11px] text-slate-400 mt-0.5 truncate max-w-[180px]">{{ row.original_file_name }} · #{{ row.resume_id }}</span>
+                    <span class="block text-sm text-ink-900">{{ row.name || '未归一化' }}</span>
+                    <span class="block text-[11px] text-ink-400 mt-0.5 truncate max-w-[180px]">{{ row.original_file_name }} · #{{ row.resume_id }}</span>
                   </span>
                 </div>
               </td>
               <td class="px-4 py-4">
-                <span class="text-xs text-slate-600">
+                <span class="text-xs text-ink-600">
                   {{ row.result === 'PASS' ? row.passedJobs.join('、') : '全部岗位均不满足' }}
                 </span>
               </td>
               <td class="px-4 py-4">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px]" :class="resultCls(row.result)">
+                <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full" :class="resultCls(row.result)">
                   {{ resultText(row.result) }}
                 </span>
               </td>
               <td class="px-4 py-4">
-                <span class="text-xs text-slate-500 leading-relaxed">{{ row.firstFail || '硬性条件全部满足' }}</span>
+                <span class="text-xs text-ink-500 leading-relaxed">{{ row.firstFail || '硬性条件全部满足' }}</span>
               </td>
               <td class="px-4 py-4">
-                <span class="text-xs text-amber-700 leading-relaxed">{{ row.pendingNote || '—' }}</span>
+                <span class="text-xs text-warn leading-relaxed">{{ row.pendingNote || '—' }}</span>
               </td>
               <td class="px-6 py-4">
                 <div class="flex items-center justify-end gap-1.5">
-                  <button type="button" class="px-2.5 py-1.5 rounded-lg text-xs text-slate-600 bg-slate-100 hover:bg-slate-200"
+                  <button type="button" class="px-2.5 py-1.5 rounded-lg text-xs text-ink-600 bg-page hover:bg-hairline-soft"
                     @click="openMatch(row)">岗位匹配</button>
-                  <button type="button" class="px-2.5 py-1.5 rounded-lg text-xs text-blue-600 bg-blue-50 hover:bg-blue-100"
+                  <button type="button" class="px-2.5 py-1.5 rounded-lg text-xs text-brand-600 bg-brand-50 hover:bg-brand-100"
                     @click="openReview(row)">HR 复核</button>
                 </div>
               </td>
             </tr>
             <tr v-if="!filteredRows.length">
               <td colspan="6" class="px-6 py-16 text-center">
-                <div class="w-12 h-12 mx-auto rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+                <div class="w-12 h-12 mx-auto rounded-full bg-page text-ink-400 flex items-center justify-center">
                   <el-icon :size="24"><Filter /></el-icon>
                 </div>
-                <p class="text-sm text-slate-500 mt-3">暂无筛选结果</p>
-                <p class="text-xs text-slate-400 mt-1">选择需求与岗位后查看；或先在简历上传页发起处理</p>
+                <p class="text-sm text-ink-500 mt-3">暂无筛选结果</p>
+                <p class="text-xs text-ink-400 mt-1">选择需求与岗位后查看；或先在简历上传页发起处理</p>
               </td>
             </tr>
           </tbody>
@@ -161,17 +161,17 @@
     <el-drawer v-model="reviewDrawer" size="70%" :title="`HR 复核 — ${reviewing?.name ?? reviewing?.original_file_name ?? ''}`">
       <div v-if="reviewing" class="h-full flex gap-4">
         <div class="w-1/2 flex flex-col min-h-0">
-          <div class="px-3 py-2 bg-slate-50 border border-slate-100 rounded-t-xl flex items-center gap-2 shrink-0">
-            <el-icon class="text-rose-500" :size="16"><Document /></el-icon>
-            <span class="text-xs font-medium text-slate-700">原始 PDF 简历</span>
-            <span class="text-[11px] text-slate-400 ml-auto">未做字段处理</span>
+          <div class="px-3 py-2 bg-page border border-hairline-soft rounded-t-xl flex items-center gap-2 shrink-0">
+            <el-icon class="text-critical" :size="16"><Document /></el-icon>
+            <span class="text-xs font-medium text-ink-600">原始 PDF 简历</span>
+            <span class="text-[11px] text-ink-400 ml-auto">未做字段处理</span>
           </div>
-          <iframe :src="resumeFileUrl(reviewing.resume_id)" class="flex-1 min-h-0 w-full bg-slate-100 rounded-b-xl" />
+          <iframe :src="resumeFileUrl(reviewing.resume_id)" class="flex-1 min-h-0 w-full bg-page rounded-b-xl" />
         </div>
         <div class="w-1/2 flex flex-col min-h-0">
-          <div class="px-3 py-2 bg-slate-50 border border-slate-100 rounded-t-xl flex items-center gap-2 shrink-0">
-            <el-icon class="text-blue-600" :size="16"><Checked /></el-icon>
-            <span class="text-xs font-medium text-slate-700">归一化后的简历（可编辑修正）</span>
+          <div class="px-3 py-2 bg-page border border-hairline-soft rounded-t-xl flex items-center gap-2 shrink-0">
+            <el-icon class="text-brand-600" :size="16"><Checked /></el-icon>
+            <span class="text-xs font-medium text-ink-600">归一化后的简历（可编辑修正）</span>
             <el-tag v-if="detail?.status_label" size="small" class="ml-auto">{{ detail?.status_label }}</el-tag>
           </div>
           <div class="flex-1 min-h-0 overflow-y-auto p-4">
@@ -208,11 +208,11 @@
                 <el-select v-model="form.skills" multiple filterable allow-create default-first-option style="width: 100%" />
               </el-form-item>
             </el-form>
-            <p v-if="detail?.failure_reason" class="text-[11px] text-slate-500 leading-relaxed">
+            <p v-if="detail?.failure_reason" class="text-[11px] text-ink-500 leading-relaxed">
               初筛汇总：{{ detail.failure_reason }}
             </p>
           </div>
-          <div class="p-3 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0">
+          <div class="p-3 border-t border-hairline-soft flex items-center justify-end gap-2 shrink-0">
             <el-button size="small" :loading="saving" @click="save">保存修改</el-button>
             <el-button size="small" type="warning" plain @click="reparse">重试解析</el-button>
             <el-button size="small" type="danger" plain @click="reject">筛除</el-button>
@@ -224,22 +224,22 @@
 
     <!-- 岗位匹配情况弹窗（各岗初筛判定；评分功能建设中） -->
     <el-dialog v-model="matchDialog" title="岗位匹配情况" width="640px">
-      <p class="text-[11px] text-slate-400 mb-3">
+      <p class="text-[11px] text-ink-400 mb-3">
         该候选人在需求下各岗位的初筛判定；匹配度评分功能建设中，当前以硬性条件判定为准。
       </p>
       <div class="space-y-2">
         <div v-for="m in matchRows" :key="m.job_name"
-          class="flex items-center gap-3 rounded-xl border border-slate-200 p-3.5">
-          <span class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center text-sm font-semibold shrink-0">—</span>
+          class="flex items-center gap-3 rounded-xl border border-hairline p-3.5">
+          <span class="w-10 h-10 rounded-xl bg-page text-ink-500 flex items-center justify-center text-sm font-semibold shrink-0">—</span>
           <div class="flex-1 min-w-0">
-            <div class="text-sm text-slate-800">{{ m.job_name }}</div>
-            <div class="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{{ m.reason }}</div>
+            <div class="text-sm text-ink-900">{{ m.job_name }}</div>
+            <div class="text-[11px] text-ink-400 mt-0.5 leading-relaxed">{{ m.reason }}</div>
           </div>
-          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] shrink-0" :class="resultCls(m.result)">
+          <span class="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full shrink-0" :class="resultCls(m.result)">
             {{ resultText(m.result) }}
           </span>
         </div>
-        <div v-if="!matchRows.length" class="py-8 text-center text-xs text-slate-400">暂无判定记录</div>
+        <div v-if="!matchRows.length" class="py-8 text-center text-xs text-ink-400">暂无判定记录</div>
       </div>
       <template #footer>
         <el-button @click="matchDialog = false">关闭</el-button>
@@ -378,7 +378,7 @@ const viewLabel = computed(() => {
 })
 
 function resultCls(r: string) {
-  return { PASS: 'bg-emerald-50 text-emerald-600', REJECT: 'bg-rose-50 text-rose-600', PENDING_REVIEW: 'bg-amber-50 text-amber-600' }[r] ?? 'bg-slate-100 text-slate-500'
+  return { PASS: 'bg-good-soft text-good', REJECT: 'bg-critical-soft text-critical', PENDING_REVIEW: 'bg-warn-soft text-warn' }[r] ?? 'bg-page text-ink-500'
 }
 function resultText(r: string) {
   return ({ PASS: '初筛通过', REJECT: '初筛未通过', PENDING_REVIEW: '待人工复核' } as Record<string, string>)[r] ?? r

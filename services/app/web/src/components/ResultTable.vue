@@ -17,7 +17,7 @@
     </el-table-column>
     <el-table-column label="判定明细" min-width="280">
       <template #default="{ row }">
-        <span class="summary">{{ row.reasons.map((r: any) => r.rule).join(' · ') }}</span>
+        <span class="text-xs text-ink-400">{{ row.reasons.map((r: any) => r.rule).join(' · ') }}</span>
       </template>
     </el-table-column>
     <el-table-column label="简历" width="100" fixed="right">
@@ -38,5 +38,4 @@ defineProps<{ rows: FilterResult[] }>()
 <style scoped>
 .reasons { padding: 8px 20px; }
 .reason { margin: 4px 0; display: flex; align-items: center; gap: 8px; }
-.summary { color: #909399; font-size: 12px; }
 </style>

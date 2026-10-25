@@ -1,11 +1,3 @@
-"""Pydantic v2 契约：SPEC 实体契约 + API 请求/响应模型。
-
-实体契约部分（Job/EducationExperience/ProjectExperience/WorkExperience/
-ResumeProfile/ResumeProcessingResult）源自《技术SPEC架构说明书》维度一，保持校验规则不变。
-"""
-
-from __future__ import annotations
-
 from typing import Annotated, Literal
 
 from pydantic import (
@@ -14,6 +6,7 @@ from pydantic import (
     ConfigDict,
     Field,
     StringConstraints,
+    field_validator,
     model_validator,
 )
 
@@ -452,4 +445,41 @@ class FilterRunOut(BaseModel):
     requirement_id: int | None = None
     requirement_name: str | None = None
 
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ======================= Agent =======================
+class AgentChatRequest(BaseModel):
+    message: NonEmptyText = Field(max_length=2000)
+
+
+class AgentToolTrace(BaseModel):
+    tool: str
+    arguments: dict[str, object]
+    success: bool
+
+
+class AgentChatResponse(BaseModel):
+    answer: str
+    tool_traces: list[AgentToolTrace] = Field(default_factory=list)
+
+
+#======================= User Verify===================
+class LoginRequest(BaseModel):
+    username: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100,)]
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_bytes(cls, password: str) -> str:
+        password_bytes = password.encode("utf-8")
+        if len(password_bytes) > 72:
+            raise ValueError("密码的 UTF-8 编码不能超过 72 字节")
+        return password
+
+
+class AuthUserOut(BaseModel):
+    user_id: int
+    username: str
+    display_name: str
     model_config = ConfigDict(from_attributes=True)

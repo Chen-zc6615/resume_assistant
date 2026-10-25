@@ -3,25 +3,25 @@
     <!-- 欢迎与快捷操作 -->
     <section class="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h2 class="text-xl font-semibold text-slate-900">{{ greeting }}，{{ hrName }} 👋</h2>
-        <p class="text-sm text-slate-500 mt-1">
+        <h2 class="text-xl font-semibold text-ink-900">{{ greeting }}，{{ hrName }} 👋</h2>
+        <p class="text-sm text-ink-500 mt-1">
           今天是 {{ today }}，当前有
-          <span class="text-blue-600 font-medium">{{ openRequirements.length }} 个招聘需求</span> 在推进，
-          <span class="text-amber-600 font-medium">{{ pendingReviewCount }} 份简历</span> 等待人工复核。
+          <span class="text-brand-600 font-medium">{{ openRequirements.length }} 个招聘需求</span> 在推进，
+          <span class="text-warn font-medium">{{ pendingReviewCount }} 份简历</span> 等待人工复核。
         </p>
       </div>
       <div class="flex items-center gap-3">
         <router-link
           to="/upload"
-          class="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium
-                 flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-colors"
+          class="px-4 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium
+                 flex items-center gap-2 transition-colors"
         >
           <el-icon :size="18"><Upload /></el-icon>上传简历
         </router-link>
         <router-link
           to="/requirements"
-          class="px-4 py-2.5 rounded-lg bg-white border border-slate-200 hover:border-blue-300 hover:text-blue-600
-                 text-slate-700 text-sm font-medium flex items-center gap-2 transition-colors"
+          class="px-4 py-2.5 rounded-lg bg-card border border-hairline hover:border-brand-300 hover:text-brand-600
+                 text-ink-700 text-sm font-medium flex items-center gap-2 transition-colors"
         >
           <el-icon :size="18"><Briefcase /></el-icon>新增招聘需求
         </router-link>
@@ -30,80 +30,80 @@
 
     <!-- 关键指标 -->
     <section class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      <div class="bg-white rounded-2xl border border-slate-200 p-5">
+      <div class="bg-card rounded-xl border border-hairline p-5 transition-shadow hover:shadow-sm">
         <div class="flex items-start justify-between">
-          <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
             <el-icon :size="20"><Briefcase /></el-icon>
           </div>
-          <span class="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+          <span class="text-[11px] px-2 py-0.5 rounded-full bg-brand-50 text-brand-600">
             开放 {{ openJobCount }} 个岗位
           </span>
         </div>
-        <div class="mt-4 text-2xl font-semibold text-slate-900">
-          {{ openRequirements.length }} <span class="text-sm font-normal text-slate-400">个</span>
+        <div class="mt-4 text-2xl font-semibold text-ink-900 tracking-tight">
+          {{ openRequirements.length }} <span class="text-sm font-normal text-ink-400">个</span>
         </div>
-        <div class="text-xs text-slate-500 mt-1">进行中的招聘需求</div>
+        <div class="text-xs text-ink-500 mt-1">进行中的招聘需求</div>
       </div>
-      <div class="bg-white rounded-2xl border border-slate-200 p-5">
+      <div class="bg-card rounded-xl border border-hairline p-5 transition-shadow hover:shadow-sm">
         <div class="flex items-start justify-between">
-          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+          <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
             <el-icon :size="20"><Loading /></el-icon>
           </div>
-          <span class="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">处理中</span>
+          <span class="text-[11px] px-2 py-0.5 rounded-full bg-page text-ink-600">处理中</span>
         </div>
-        <div class="mt-4 text-2xl font-semibold text-slate-900">
-          {{ processingCount }} <span class="text-sm font-normal text-slate-400">份</span>
+        <div class="mt-4 text-2xl font-semibold text-ink-900 tracking-tight">
+          {{ processingCount }} <span class="text-sm font-normal text-ink-400">份</span>
         </div>
-        <div class="text-xs text-slate-500 mt-1">解析 / 归一化 流水线中</div>
+        <div class="text-xs text-ink-500 mt-1">解析 / 归一化 流水线中</div>
       </div>
-      <div class="bg-white rounded-2xl border border-slate-200 p-5">
+      <div class="bg-card rounded-xl border border-hairline p-5 transition-shadow hover:shadow-sm">
         <div class="flex items-start justify-between">
-          <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+          <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
             <el-icon :size="20"><User /></el-icon>
           </div>
-          <span class="text-[11px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-600">待处理</span>
+          <span class="text-[11px] px-2 py-0.5 rounded-full bg-warn-soft text-warn">待处理</span>
         </div>
-        <div class="mt-4 text-2xl font-semibold text-slate-900">
-          {{ pendingReviewCount }} <span class="text-sm font-normal text-slate-400">份</span>
+        <div class="mt-4 text-2xl font-semibold text-ink-900 tracking-tight">
+          {{ pendingReviewCount }} <span class="text-sm font-normal text-ink-400">份</span>
         </div>
-        <div class="text-xs text-slate-500 mt-1">待 HR 人工复核（含 {{ pendingCompleteCount }} 份待补录）</div>
+        <div class="text-xs text-ink-500 mt-1">待 HR 人工复核（含 {{ pendingCompleteCount }} 份待补录）</div>
       </div>
-      <div class="bg-white rounded-2xl border border-slate-200 p-5">
+      <div class="bg-card rounded-xl border border-hairline p-5 transition-shadow hover:shadow-sm">
         <div class="flex items-start justify-between">
-          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
             <el-icon :size="20"><Finished /></el-icon>
           </div>
-          <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
+          <span class="text-[11px] px-2 py-0.5 rounded-full bg-good-soft text-good">
             待审核 {{ waitingConfirmCount }} 份
           </span>
         </div>
-        <div class="mt-4 text-2xl font-semibold text-slate-900">
-          {{ doneCount }} <span class="text-sm font-normal text-slate-400">人</span>
+        <div class="mt-4 text-2xl font-semibold text-ink-900 tracking-tight">
+          {{ doneCount }} <span class="text-sm font-normal text-ink-400">人</span>
         </div>
-        <div class="text-xs text-slate-500 mt-1">已完成入库</div>
+        <div class="text-xs text-ink-500 mt-1">已完成入库</div>
       </div>
     </section>
 
     <!-- 待办 -->
-    <section class="bg-white rounded-2xl border border-slate-200 p-5">
+    <section class="bg-card rounded-xl border border-hairline p-5">
       <div class="flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-slate-900">我的待办</h3>
-        <span class="text-[11px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-600">{{ todoItems.length }} 项</span>
+        <h3 class="text-sm font-semibold text-ink-900">我的待办</h3>
+        <span class="text-[11px] px-2 py-0.5 rounded-full bg-critical-soft text-critical">{{ todoItems.length }} 项</span>
       </div>
       <div class="mt-4 space-y-3">
         <router-link
           v-for="(todo, i) in todoItems" :key="i" :to="todo.to"
-          class="flex items-start gap-3 p-3 rounded-xl border border-slate-100 hover:border-blue-200
-                 hover:bg-blue-50/40 transition-colors"
+          class="flex items-start gap-3 p-3 rounded-xl border border-hairline-soft hover:border-brand-200
+                 hover:bg-brand-50/50 transition-colors"
         >
           <el-icon :size="18" class="mt-0.5" :color="todo.color"><component :is="todo.icon" /></el-icon>
           <span class="flex-1">
-            <span class="block text-sm text-slate-800">{{ todo.title }}</span>
-            <span class="block text-xs text-slate-400 mt-0.5">{{ todo.desc }}</span>
+            <span class="block text-sm text-ink-700">{{ todo.title }}</span>
+            <span class="block text-xs text-ink-400 mt-0.5">{{ todo.desc }}</span>
           </span>
-          <el-icon class="text-slate-300"><ArrowRightBold /></el-icon>
+          <el-icon class="text-ink-300"><ArrowRightBold /></el-icon>
         </router-link>
-        <div v-if="!todoItems.length" class="py-8 text-center text-sm text-slate-400">暂无待办，一切就绪 🎉</div>
+        <div v-if="!todoItems.length" class="py-8 text-center text-sm text-ink-400">暂无待办，一切就绪 🎉</div>
       </div>
     </section>
   </div>
@@ -145,21 +145,21 @@ const todoItems = computed(() => {
     items.push({
       title: `${pendingReviewCount.value} 份简历等待人工复核`,
       desc: '信息不足的简历需人工判断去向，建议今天内处理',
-      to: '/results', icon: User, color: '#d97706',
+      to: '/results', icon: User, color: '#b97900',
     })
   }
   if (pendingCompleteCount.value) {
     items.push({
       title: `${pendingCompleteCount.value} 份简历待补录关键字段`,
       desc: '缺少联系电话 / 邮箱，补录后可入库',
-      to: '/results', icon: Warning, color: '#e11d48',
+      to: '/results', icon: Warning, color: '#ec835a',
     })
   }
   if (waitingConfirmCount.value) {
     items.push({
       title: `${waitingConfirmCount.value} 份简历通过初筛待审核入库`,
       desc: '硬性条件全部满足，确认后进入人才库',
-      to: '/results', icon: Bell, color: '#2563eb',
+      to: '/results', icon: Bell, color: '#2a78d6',
     })
   }
   for (const r of openRequirements.value) {
@@ -167,7 +167,7 @@ const todoItems = computed(() => {
       items.push({
         title: `「${r.requirement_name}」将于 ${r.deadline} 截止`,
         desc: `${r.job_count ?? 0} 个岗位，建议关注招聘进度`,
-        to: '/requirements', icon: Briefcase, color: '#059669',
+        to: '/requirements', icon: Briefcase, color: '#0ca30c',
       })
     }
   }

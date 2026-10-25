@@ -1,21 +1,8 @@
-"""知识库检索契约：空库下 chat 必须拒答（低置信度不编造）。
-
-空库时检索器提前短路，不触发任何模型调用，故离线可测。
-"""
+"""知识库检索 API 契约。"""
 
 from fastapi.testclient import TestClient
 
 from knowledge_service.app import create_app
-
-
-def test_chat_refused_when_empty():
-    with TestClient(create_app()) as client:
-        r = client.post("/api/v1/chat", json={"query": "有没有做过后端的候选人"})
-    assert r.status_code == 200
-    data = r.json()
-    assert data["is_refused"] is True
-    assert data["citations"] == []
-    assert "没有找到" in data["answer"]
 
 
 def test_search_returns_empty_when_empty():
@@ -25,3 +12,18 @@ def test_search_returns_empty_when_empty():
     data = r.json()
     assert data["results"] == []
     assert data["query"] == "Java 工程师"
+
+
+def test_search_strips_query_and_rejects_removed_fields():
+    with TestClient(create_app()) as client:
+        valid = client.post("/api/v1/search", json={"query": "  Java 工程师  "})
+        empty = client.post("/api/v1/search", json={"query": "   "})
+        extra = client.post(
+            "/api/v1/search",
+            json={"query": "Java 工程师", "top_k": 5},
+        )
+
+    assert valid.status_code == 200
+    assert valid.json()["query"] == "Java 工程师"
+    assert empty.status_code == 422
+    assert extra.status_code == 422

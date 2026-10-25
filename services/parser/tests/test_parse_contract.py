@@ -37,10 +37,10 @@ def test_s01_text_pdf_parsed(client):
 
 def test_s05_scanned_pdf_needs_ocr(client, monkeypatch):
     """S05 扫描件：直接文本不足，走 OCR 兜底（打桩 OCR 客户端）。"""
-    from parser_service.services import ocr as ocr_mod
+    from parser_service.clients import vision_client
 
     monkeypatch.setattr(
-        ocr_mod.OCRClient,
+        vision_client.VisionClient,
         "recognize_png",
         lambda self, png: "张三 后端工程师 Java MySQL " * 10,  # 足量文本
     )

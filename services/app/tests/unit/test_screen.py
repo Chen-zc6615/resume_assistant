@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import pytest
 from app_service.models.db_models import ResumeProfile
 from app_service.models.schemas import FilterRule
-from app_service.services.screen_service import evaluate_profile
+from app_service.services.screen_service import _skill_matches, evaluate_profile
 
 
 def make_profile(**kw) -> ResumeProfile:
@@ -114,3 +115,34 @@ def test_reject_beats_pending_review():
     profile = make_profile(highest_education="高中", total_work_months=None)
     result, _ = evaluate_profile(BASE_RULES, profile, ["Java"])
     assert result == "REJECT"
+
+
+# --- 已知缺陷固化：_skill_matches 双向子串兜底导致不同语言互撞 ---
+# 修复 _skill_matches 后这两个用例会转绿，strict 将其报为 XPASS 错误，
+# 提醒移除 xfail 标记；正向用例锁定子串兜底的合理方向，防止收紧时误伤。
+
+
+@pytest.mark.xfail(
+    reason="已知缺陷：java 是 javascript 的子串，双向子串兜底误命中（会 Java ≠ 会 JavaScript）",
+    strict=True,
+)
+def test_skill_java_must_not_match_javascript():
+    """两种不同语言不得因子串关系互撞（周晓东案：会 Java 被判掌握 JavaScript）。"""
+    assert not _skill_matches("JavaScript", ["Java", "MySQL", "Spring Boot"])
+
+
+@pytest.mark.xfail(
+    reason="已知缺陷：c 是 c++/c# 的子串，双向子串兜底误命中（会 C ≠ 会 C++/C#）",
+    strict=True,
+)
+def test_skill_c_must_not_match_cpp_or_csharp():
+    """会 C 不等于会 C++/C#，同族不同语言不得互撞。"""
+    assert not _skill_matches("C++", ["C"])
+    assert not _skill_matches("C#", ["C"])
+
+
+def test_skill_substring_safe_directions_still_work():
+    """子串兜底的合理方向必须保留：要求名短于候选名（缩写/基础名命中全称）。"""
+    assert _skill_matches("js", ["JavaScript"])              # 要求缩写、候选全称
+    assert _skill_matches("JavaScript", ["JavaScript ES6"])  # 要求基础名、候选带版本修饰
+    assert _skill_matches("SQL", ["MySQL"])                  # 会 MySQL 视为掌握 SQL

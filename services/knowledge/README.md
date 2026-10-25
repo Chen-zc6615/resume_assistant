@@ -1,6 +1,6 @@
 # Resume Knowledge Service
 
-独立的简历知识库微服务，负责文档切块、Embedding、Chroma、BM25、Rerank、语义检索和带来源的抽取式回答。
+独立的简历知识库微服务，负责文档切块、Embedding、Chroma、BM25、Rerank 和语义检索。自然语言回答由主服务 Agent 根据检索证据生成。
 
 ## 本地启动
 

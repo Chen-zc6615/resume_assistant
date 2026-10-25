@@ -1,4 +1,52 @@
 /* Tailwind v4：只引入 theme（颜色变量）与 utilities。
    不引 preflight——避免重置 Element Plus 的基础样式。 */
+
+/* 设计 tokens：基于已验证调色板（dataviz palette）
+   brand 主色 = 沉稳企业蓝 #2a78d6；墨色/表面为暖调中性（非冷 slate） */
+@theme {
+  /* 品牌 blue 阶（浅→深） */
+  --color-brand-50: #e8f1fd;
+  --color-brand-100: #cde2fb;
+  --color-brand-150: #b7d3f6;
+  --color-brand-200: #9ec5f4;
+  --color-brand-300: #6da7ec;
+  --color-brand-400: #5598e7;
+  --color-brand-500: #2a78d6;
+  --color-brand-600: #256abf;
+  --color-brand-700: #1c5cab;
+  --color-brand-800: #184f95;
+
+  /* 墨色（文字） */
+  --color-ink-900: #0b0b0b;
+  --color-ink-700: #3a3936;
+  --color-ink-600: #52514e;
+  --color-ink-500: #6f6d67;
+  --color-ink-400: #898781;
+  --color-ink-300: #b5b3ab;
+
+  /* 表面 */
+  --color-page: #f9f9f7;
+  --color-card: #fcfcfb;
+  --color-hairline: #e1e0d9;
+  --color-hairline-soft: #edece7;
+
+  /* 状态色（语义保留，不挪作他用） */
+  --color-good: #0ca30c;
+  --color-good-soft: #e9f6e9;
+  --color-warn: #b97900;
+  --color-warn-strong: #fab219;
+  --color-warn-soft: #fdf3dd;
+  --color-serious: #ec835a;
+  --color-serious-soft: #fdeee7;
+  --color-critical: #d03b3b;
+  --color-critical-soft: #fbecec;
+
+  /* 石墨侧栏 */
+  --color-shell-950: #131312;
+  --color-shell-900: #1a1a19;
+  --color-shell-800: #242422;
+  --color-shell-700: #333330;
+}
+
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
