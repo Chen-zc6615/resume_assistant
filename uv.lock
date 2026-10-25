@@ -3169,7 +3169,6 @@ dependencies = [
     { name = "httpx" },
     { name = "jsonschema" },
     { name = "litellm" },
-    { name = "openai" },
     { name = "pdfplumber" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
@@ -3189,8 +3188,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "jsonschema", specifier = ">=4.22" },
-    { name = "litellm", specifier = ">=1.0" },
-    { name = "openai", specifier = ">=1.40" },
+    { name = "litellm", specifier = ">=1.106.1" },
     { name = "pdfplumber", specifier = ">=0.11" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "pydantic", specifier = ">=2.7" },
@@ -3247,7 +3245,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
     { name = "jieba" },
-    { name = "openai" },
+    { name = "litellm" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pyyaml" },
@@ -3261,7 +3259,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "jieba", specifier = ">=0.42.1" },
-    { name = "openai", specifier = ">=1.40" },
+    { name = "litellm", specifier = ">=1.106.1" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pydantic-settings", specifier = ">=2.3" },
     { name = "pyyaml", specifier = ">=6.0" },
@@ -3275,7 +3273,7 @@ version = "0.1.0"
 source = { editable = "services/parser" }
 dependencies = [
     { name = "fastapi" },
-    { name = "openai" },
+    { name = "litellm" },
     { name = "pdfplumber" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -3288,7 +3286,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
-    { name = "openai", specifier = ">=1.40" },
+    { name = "litellm", specifier = ">=1.106.1" },
     { name = "pdfplumber", specifier = ">=0.11" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pydantic-settings", specifier = ">=2.3" },

@@ -30,7 +30,7 @@
 
 ![Image](https://internal-api-drive-stream.feishu.cn/space/api/box/stream/download/authcode/?code=ZDI0YTM5ZDdiMTQyNGI1MGVjMDg0YjQzNDhlN2Y2ODVfZThkYjQxNWVmYjI3Njc3ZWM0YzQ0NzA3ODhjMTgzNzdfSUQ6NzY5NDg1Nzc4MTYzMTE0Mjg1NF8xNzkxNjE3NzI2OjE3OTE3MDQxMjZfVjM)
 
-图中自上而下依次是交互层、接口层、业务层和数据层。前端只通过 HTTP 接口访问业务能力；接口层将请求交给管理模块或处理服务；处理服务通过统一模型客户端访问外部模型，并通过数据库会话与文件目录保存结果。
+图中自上而下依次是交互层、接口层、业务层和数据层。前端只通过 HTTP 接口访问业务能力；接口层将请求交给管理模块或处理服务；每个后端服务通过自己的模型客户端访问外部模型，业务层只表达归一化、Agent 推理、OCR、Embedding 或 Rerank 等任务，不直接拼接供应商请求。
 
 需求与岗位管理提供招聘业务上下文，简历处理流水线组织自动处理能力，人工审核与人才管理承接需要 HR 决定的事项。三个业务区域共享同一套简历和岗位数据，避免在不同页面维护互不一致的候选人副本。
 
@@ -66,7 +66,7 @@
 |数据库|PostgreSQL 17 \+ psycopg 3|提供事务、约束和并发访问能力；生产与测试数据库通过 Docker Compose 分别运行|
 |文件存储|本地目录|将原始 PDF 与业务记录分开保存，便于预览、复核和重新解析|
 |后台处理|FastAPI BackgroundTasks|上传请求返回后在应用进程内处理任务，无需另建队列服务|
-|模型接入|OpenAI Python SDK，连接 DashScope 兼容接口|由统一客户端封装文本模型和视觉模型，避免业务模块直接拼接模型请求|
+|模型接入|LiteLLM，连接 DashScope 及兼容接口|由各服务自己的 `clients/` 分别封装文本、视觉、Embedding 和 Rerank 调用，避免跨服务共享客户端或由业务模块直接拼接模型请求|
 
 后台任务与进度数据依赖当前应用进程，因此这是单实例处理架构。数据库和原始文件是持久化数据；批次进度不是持久任务记录。后续如需多实例处理，应先解决任务分发与进度共享，而不能仅增加应用进程数。
 

@@ -7,8 +7,8 @@ from dataclasses import dataclass
 import pdfplumber
 import pymupdf
 
+from parser_service.clients.vision_client import VisionClient
 from parser_service.core.config import Settings
-from parser_service.services.ocr import OCRClient
 from parser_service.services.security import validate_pdf
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ def parse_pdf(content: bytes, settings: Settings) -> ParseResult:
     last_error: Exception | None = None
     for attempt in range(1, settings.ocr_max_retries + 1):
         try:
-            ocr = OCRClient(settings)
+            ocr = VisionClient(settings)
             text = "\n".join(ocr.recognize_png(page) for page in pages)
             chars = count_effective_chars(text)
             if chars >= settings.min_effective_chars:

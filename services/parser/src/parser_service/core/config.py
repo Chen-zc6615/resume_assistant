@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 SERVICE_ROOT = Path(__file__).resolve().parents[3]
@@ -24,7 +24,11 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = Field(default=5, ge=1, le=50)
     min_effective_chars: int = Field(default=50, ge=1)
     ocr_max_retries: int = Field(default=2, ge=1, le=5)
-    parse_timeout_seconds: float = Field(default=30.0, gt=0)
+    ocr_timeout_seconds: float = Field(
+        default=30.0,
+        gt=0,
+        validation_alias=AliasChoices("OCR_TIMEOUT_SECONDS", "PARSE_TIMEOUT_SECONDS"),
+    )
 
 
 @lru_cache

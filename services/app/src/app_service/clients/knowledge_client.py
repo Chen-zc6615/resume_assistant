@@ -31,6 +31,22 @@ class DocumentWriteResult:
     chunk_count: int
 
 
+@dataclass(frozen=True)
+class KnowledgeSearchResult:
+    chunk_id: str
+    document_id: str
+    content: str
+    metadata: dict[str, Any]
+    rerank_score: float
+
+
+@dataclass(frozen=True)
+class KnowledgeSearchResponse:
+    query: str
+    results: list[KnowledgeSearchResult]
+    latency_ms: float
+
+
 def _detail(response: httpx.Response) -> str:
     try:
         payload = response.json()
@@ -172,6 +188,64 @@ def delete_document(document_id: str) -> None:
                 attempt,
                 attempts,
                 document_id,
+            )
+
+        if attempt < attempts:
+            time.sleep(settings.knowledge_http_retry_backoff_seconds)
+
+    raise KnowledgeServiceError(last_error)
+
+
+def search(query: str) -> KnowledgeSearchResponse:
+    """检索人才知识库；结果供主服务 Agent 组织最终回答。"""
+
+    normalized_query = query.strip()
+    if not normalized_query:
+        raise ValueError("query 不能为空")
+
+    settings = get_settings()
+    url = f"{settings.knowledge_service_base_url.rstrip('/')}/api/v1/search"
+    attempts = settings.knowledge_http_max_retries + 1
+    last_error = "知识库服务不可用"
+
+    for attempt in range(1, attempts + 1):
+        try:
+            with httpx.Client(timeout=_timeout()) as client:
+                response = client.post(url, json={"query": normalized_query})
+        except httpx.HTTPError as exc:
+            last_error = f"知识库服务不可用：{exc}"
+            logger.warning("知识库检索失败（%s/%s）: %s", attempt, attempts, exc)
+        else:
+            if response.status_code == 200:
+                try:
+                    payload = response.json()
+                    results = [
+                        KnowledgeSearchResult(
+                            chunk_id=str(item["chunk_id"]),
+                            document_id=str(item["document_id"]),
+                            content=str(item["content"]),
+                            metadata=dict(item.get("metadata") or {}),
+                            rerank_score=float(item["rerank_score"]),
+                        )
+                        for item in payload["results"]
+                    ]
+                    return KnowledgeSearchResponse(
+                        query=str(payload["query"]),
+                        results=results,
+                        latency_ms=float(payload["latency_ms"]),
+                    )
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise KnowledgeServiceError("知识库返回了无效的检索结果") from exc
+
+            detail = _detail(response)
+            if response.status_code < 500:
+                raise KnowledgeServiceError(f"知识库拒绝检索：{detail}")
+            last_error = f"知识库服务不可用：{detail}"
+            logger.warning(
+                "知识库检索返回 %s（%s/%s）",
+                response.status_code,
+                attempt,
+                attempts,
             )
 
         if attempt < attempts:

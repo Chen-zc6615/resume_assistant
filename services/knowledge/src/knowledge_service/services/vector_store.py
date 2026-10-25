@@ -4,9 +4,9 @@ from typing import Any
 
 import chromadb
 
+from knowledge_service.clients.embedding_client import EmbeddingClient
 from knowledge_service.core.config import Settings
 from knowledge_service.services.chunker import Chunk, chroma_metadata
-from knowledge_service.services.embedding import EmbeddingClient
 
 
 class VectorStore:
