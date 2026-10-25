@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 SERVICE_ROOT = Path(__file__).resolve().parents[3]
@@ -28,7 +28,18 @@ class Settings(BaseSettings):
     knowledge_rough_top_k: int = Field(default=15, ge=1, le=100)
     knowledge_final_top_k: int = Field(default=3, ge=1, le=20)
     knowledge_refusal_threshold: float = Field(default=0.35, ge=0.0, le=1.0)
-    model_timeout_seconds: float = Field(default=120.0, gt=0)
+    embedding_timeout_seconds: float = Field(
+        default=120.0,
+        gt=0,
+        validation_alias=AliasChoices(
+            "EMBEDDING_TIMEOUT_SECONDS", "MODEL_TIMEOUT_SECONDS"
+        ),
+    )
+    rerank_timeout_seconds: float = Field(
+        default=120.0,
+        gt=0,
+        validation_alias=AliasChoices("RERANK_TIMEOUT_SECONDS", "MODEL_TIMEOUT_SECONDS"),
+    )
 
     @field_validator("knowledge_data_dir", "knowledge_wiki_dir", mode="after")
     @classmethod

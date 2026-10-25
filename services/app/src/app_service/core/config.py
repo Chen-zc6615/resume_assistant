@@ -5,6 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,13 +24,31 @@ class Settings(BaseSettings):
     database_url: str
 
     # --- 上传约束（PRD：仅 PDF，单文件 <5M）---
-    max_upload_size_mb: int = 5
+    max_upload_size_mb: int = 10
 
-    # --- 大模型（DashScope OpenAI 兼容）---
+    # --- 本服务的模型任务（底层协议统一由 clients/model_client.py 封装）---
     dashscope_api_key: str = ""
     llm_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    llm_model: str = "qwen-plus"  # 归一化结构化提取
-    llm_timeout_seconds: float = 20.0  # PRD：归一化超 20s 判失败
+    normalization_model: str = Field(
+        default="qwen-plus",
+        validation_alias=AliasChoices("NORMALIZATION_MODEL", "LLM_MODEL"),
+    )
+    normalization_timeout_seconds: float = Field(
+        default=20.0,
+        gt=0,
+        validation_alias=AliasChoices(
+            "NORMALIZATION_TIMEOUT_SECONDS", "LLM_TIMEOUT_SECONDS"
+        ),
+    )
+    agent_model: str = Field(
+        default="qwen-plus",
+        validation_alias=AliasChoices("AGENT_MODEL", "LLM_MODEL"),
+    )
+    agent_timeout_seconds: float = Field(
+        default=30.0,
+        gt=0,
+        validation_alias=AliasChoices("AGENT_TIMEOUT_SECONDS", "LLM_TIMEOUT_SECONDS"),
+    )
     max_llm_retries: int = 2  # SPEC：校验失败最多重试 2 次
 
     # --- 解析服务（PDF -> 文本，独立微服务）---

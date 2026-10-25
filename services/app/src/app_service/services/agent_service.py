@@ -1,7 +1,3 @@
-"""只读招聘 Agent：通过受控工具查询业务事实并生成可追踪答复。"""
-
-from __future__ import annotations
-
 import json
 from collections.abc import Callable
 from typing import Any
@@ -10,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app_service.core.config import get_settings
+from app_service.clients import knowledge_client, model_client
 from app_service.core.logger import get_logger
 from app_service.models.db_models import (
     FilterResult,
@@ -23,7 +19,6 @@ from app_service.models.db_models import (
     ResumeProfile,
 )
 from app_service.models.schemas import AgentChatResponse, AgentToolTrace
-from app_service.services.llm import get_client
 from app_service.services.upload_service import STATUS_LABELS
 
 logger = get_logger(__name__)
@@ -66,6 +61,10 @@ class _SearchCandidatesArgs(_StrictArgs):
 
 class _ResumeDetailArgs(_StrictArgs):
     resume_id: int = Field(gt=0)
+
+
+class _SearchKnowledgeArgs(_StrictArgs):
+    query: str = Field(min_length=1, max_length=2000)
 
 
 AGENT_TOOLS: list[dict[str, Any]] = [
@@ -140,6 +139,22 @@ AGENT_TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
+            "name": "search_talent_knowledge",
+            "description": "检索已沉淀人才的经历、技能和项目等知识库内容。",
+            "strict": True,
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "minLength": 1, "maxLength": 2000}
+                },
+                "required": ["query"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "get_resume_screening_detail",
             "description": "按简历ID查询候选人归一化字段和已有的确定性初筛结果及逐条原因。",
             "strict": True,
@@ -161,7 +176,8 @@ SYSTEM_PROMPT = """你是智能简历筛选助手中的 HR 只读查询 Agent。
 2. 只能解释工具返回的既有结果。不得自行打分、推断候选人是否合格、改变初筛结论或建议绕过硬性规则。
 3. 信息缺失时明确说“系统暂无该信息”；信息不足不等于不合格。
 4. 不得声称已经创建、修改、删除、筛选、入库或邀约；当前工具全部只读。
-5. 用简洁中文回答。引用候选人时尽量带 resume_id，引用需求或岗位时带对应 ID。
+5. 查询已沉淀人才的经历、技能或项目时，调用 search_talent_knowledge，并仅依据返回证据回答。
+6. 用简洁中文回答。引用候选人时尽量带 resume_id，引用需求或岗位时带对应 ID。
 """
 
 
@@ -357,6 +373,26 @@ def _resume_screening_detail(db: Session, args: _ResumeDetailArgs) -> dict[str, 
     }
 
 
+def _search_talent_knowledge(
+    _: Session, args: _SearchKnowledgeArgs
+) -> dict[str, Any]:
+    response = knowledge_client.search(args.query)
+    return {
+        "query": response.query,
+        "latency_ms": response.latency_ms,
+        "results": [
+            {
+                "chunk_id": result.chunk_id,
+                "document_id": result.document_id,
+                "content": result.content,
+                "metadata": result.metadata,
+                "rerank_score": result.rerank_score,
+            }
+            for result in response.results
+        ],
+    }
+
+
 ToolHandler = tuple[type[_StrictArgs], Callable[[Session, Any], dict[str, Any]]]
 _TOOL_HANDLERS: dict[str, ToolHandler] = {
     "get_dashboard_summary": (_EmptyArgs, _dashboard_summary),
@@ -364,6 +400,7 @@ _TOOL_HANDLERS: dict[str, ToolHandler] = {
     "get_requirement_overview": (_RequirementOverviewArgs, _requirement_overview),
     "search_candidates": (_SearchCandidatesArgs, _search_candidates),
     "get_resume_screening_detail": (_ResumeDetailArgs, _resume_screening_detail),
+    "search_talent_knowledge": (_SearchKnowledgeArgs, _search_talent_knowledge),
 }
 
 
@@ -382,11 +419,15 @@ def execute_tool(db: Session, name: str, arguments: dict[str, Any]) -> tuple[boo
         return False, {"error": "工具执行失败"}
 
 
-def chat(db: Session, message: str, *, client: Any | None = None) -> AgentChatResponse:
+def chat(
+    db: Session,
+    message: str,
+    *,
+    completion_fn: Callable[..., Any] | None = None,
+) -> AgentChatResponse:
     """运行有界工具调用循环；所有系统事实只能来自只读工具。"""
-    settings = get_settings()
     try:
-        llm_client = client or get_client()
+        call_model = completion_fn or model_client.get_agent_completion()
     except Exception as exc:
         raise AgentUnavailableError(str(exc)) from exc
 
@@ -398,14 +439,12 @@ def chat(db: Session, message: str, *, client: Any | None = None) -> AgentChatRe
 
     for _ in range(MAX_TOOL_STEPS):
         try:
-            response = llm_client.chat.completions.create(
-                model=settings.llm_model,
+            response = call_model(
                 messages=messages,
                 tools=AGENT_TOOLS,
                 tool_choice="auto",
                 parallel_tool_calls=False,
                 temperature=0.1,
-                timeout=settings.llm_timeout_seconds,
             )
         except Exception as exc:
             logger.exception("Agent 模型调用失败")

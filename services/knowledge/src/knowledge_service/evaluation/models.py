@@ -12,8 +12,6 @@ class GoldenCase(BaseModel):
 
     reference_chunk_ids: list[str] = Field(default_factory=list)
     expected_keywords: list[str] = Field(default_factory=list)
-    metadata_filter: dict[str, object] | None = None
-
     is_adversarial: bool = False
     is_cross_doc: bool = False
 
@@ -56,9 +54,6 @@ class CaseEvaluation(BaseModel):
     rank_before_rerank: int | None
     rank_after_rerank: int | None
     rerank_rank_change: int | None
-
-    metadata_filter_compliant: bool | None
-    metadata_filter_recall_passed: bool | None
 
     citation_count: int
     top_score: float | None
@@ -112,9 +107,6 @@ class EvaluationSummary(BaseModel):
 
     rerank_improvement_rate: float | None
     average_rerank_rank_change: float | None
-
-    metadata_filter_compliance_rate: float | None
-    metadata_filter_recall_rate: float | None
 
     average_judge_correctness: float | None
     average_judge_groundedness: float | None
