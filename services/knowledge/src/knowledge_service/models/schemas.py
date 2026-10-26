@@ -108,22 +108,3 @@ class SearchResponse(BaseModel):
     results: list[SearchResult]
     latency_ms: float
 
-<<<<<<< HEAD
-
-class Citation(BaseModel):
-    chunk_id: str
-    talent_card_id: str
-    section: str
-    snippet: str
-    relevance_score: float
-
-
-class ChatResponse(BaseModel):
-    query: str
-    answer: str
-    is_refused: bool
-    citations: list[Citation] = Field(default_factory=list)
-    latency_ms: float
-
-=======
->>>>>>> origin/develop

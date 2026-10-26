@@ -27,8 +27,8 @@
       </p>
     </section>
 
-    <!-- 三态汇总 -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <!-- 四态汇总 -->
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <button
         type="button"
         class="text-left bg-card rounded-xl border p-5 transition-shadow hover:shadow-sm"
@@ -73,6 +73,21 @@
         </div>
         <div class="mt-3 text-2xl font-semibold text-ink-900 tracking-tight">{{ countOf('PENDING_REVIEW') }} <span class="text-sm font-normal text-ink-400">份</span></div>
         <div class="text-[11px] text-warn mt-1">信息不足无法判定，需 HR 人工处理</div>
+      </button>
+      <button
+        type="button"
+        class="text-left bg-card rounded-xl border p-5 transition-shadow hover:shadow-sm"
+        :class="tab === 'failed' ? 'border-ink-400' : 'border-hairline hover:border-ink-300'"
+        @click="tab = 'failed'"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-ink-500">处理失败</span>
+          <span class="w-8 h-8 rounded-lg bg-hairline-soft text-ink-500 flex items-center justify-center">
+            <el-icon :size="18"><Warning /></el-icon>
+          </span>
+        </div>
+        <div class="mt-3 text-2xl font-semibold text-ink-900 tracking-tight">{{ countOf('FAILED') }} <span class="text-sm font-normal text-ink-400">份</span></div>
+        <div class="text-[11px] text-ink-500 mt-1">解析/归一化/上传失败，附原因可重试</div>
       </button>
     </section>
 
@@ -119,23 +134,45 @@
                 </div>
               </td>
               <td class="px-4 py-4">
-                <span class="text-xs text-ink-600">
+                <span v-if="row.result === 'FAILED'" class="text-xs text-ink-400">—</span>
+                <span v-else class="text-xs text-ink-600">
                   {{ row.result === 'PASS' ? row.passedJobs.join('、') : '全部岗位均不满足' }}
                 </span>
               </td>
               <td class="px-4 py-4">
-                <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full" :class="resultCls(row.result)">
+                <span
+                  v-if="row.result === 'FAILED'"
+                  class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-critical-soft text-critical"
+                  :title="row.failureReason || undefined"
+                >{{ row.statusLabel ?? '处理失败' }}</span>
+                <span
+                  v-else-if="row.pendingComplete"
+                  class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-warn-soft text-warn"
+                  title="初筛已通过，电话/邮箱缺失，补录后自动转待审核入库"
+                >待补录</span>
+                <span v-else class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full" :class="resultCls(row.result)">
                   {{ resultText(row.result) }}
                 </span>
               </td>
               <td class="px-4 py-4">
-                <span class="text-xs text-ink-500 leading-relaxed">{{ row.firstFail || '硬性条件全部满足' }}</span>
+                <span
+                  v-if="row.result === 'FAILED'"
+                  class="text-xs leading-relaxed block text-critical"
+                >{{ row.failureReason || '—' }}</span>
+                <span v-else class="text-xs text-ink-500 leading-relaxed">{{ row.firstFail || '硬性条件全部满足' }}</span>
               </td>
               <td class="px-4 py-4">
-                <span class="text-xs text-warn leading-relaxed">{{ row.pendingNote || '—' }}</span>
+                <span v-if="row.result === 'FAILED'" class="text-xs text-ink-400">—</span>
+                <span v-else class="text-xs text-warn leading-relaxed">{{ row.pendingNote || '—' }}</span>
               </td>
               <td class="px-6 py-4">
-                <div class="flex items-center justify-end gap-1.5">
+                <div v-if="row.result === 'FAILED'" class="flex items-center justify-end">
+                  <button v-if="row.failedStatus !== 0" type="button" :disabled="retrying === row.resume_id"
+                    class="px-2.5 py-1.5 rounded-lg text-xs text-brand-600 bg-brand-50 hover:bg-brand-100 disabled:opacity-60 disabled:cursor-not-allowed"
+                    @click="retryParse(row)">{{ retrying === row.resume_id ? '重试中…' : '重试解析' }}</button>
+                  <span v-else class="text-[11px] text-ink-400">请重新上传</span>
+                </div>
+                <div v-else class="flex items-center justify-end gap-1.5">
                   <button type="button" class="px-2.5 py-1.5 rounded-lg text-xs text-ink-600 bg-page hover:bg-hairline-soft"
                     @click="openMatch(row)">岗位匹配</button>
                   <button type="button" class="px-2.5 py-1.5 rounded-lg text-xs text-brand-600 bg-brand-50 hover:bg-brand-100"
@@ -250,14 +287,15 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import { Checked, CircleCheck, CircleClose, Document, Filter, User } from '@element-plus/icons-vue'
+import { Checked, CircleCheck, CircleClose, Document, Filter, User, Warning } from '@element-plus/icons-vue'
 import {
-  confirmResume, getResume, listJobs, listRequirements, listRuns, reparseResume, rejectResume,
-  resumeFileUrl, runResults, updateProfile,
+  confirmResume, getResume, listJobs, listRequirements, listResumes, listRuns, reparseResume,
+  rejectResume, resumeFileUrl, runResults, updateProfile,
 } from '../api'
 import { toast } from '../components/toast'
-import type { FilterRun, Job, Requirement, ResumeDetail } from '../types'
+import type { FilterRun, Job, Requirement, ResumeBrief, ResumeDetail } from '../types'
 
 const DEGREES = ['大专', '本科', '硕士', '博士']
 const TABS = [
@@ -265,6 +303,7 @@ const TABS = [
   { key: 'pass', label: '初筛通过' },
   { key: 'fail', label: '初筛未通过' },
   { key: 'review', label: '待人工复核' },
+  { key: 'failed', label: '处理失败' },
 ]
 
 const requirements = ref<Requirement[]>([])
@@ -273,7 +312,12 @@ const runs = ref<FilterRun[]>([])
 const results = ref<PersonRow[]>([])
 const demandId = ref<number | null>(null)
 const jobId = ref<number | null>(null)
-const tab = ref('all')
+// 支持 ?tab=review 等直达（工作台待办/汇总卡跳转带 tab 参数）
+const route = useRoute()
+const VALID_TABS = ['all', 'pass', 'fail', 'review', 'failed']
+const tab = ref(
+  VALID_TABS.includes(String(route.query.tab)) ? String(route.query.tab) : 'all',
+)
 
 const jobsOfDemand = computed(() =>
   demandId.value == null ? allJobs.value : allJobs.value.filter((j) => j.requirement_id === demandId.value),
@@ -281,10 +325,27 @@ const jobsOfDemand = computed(() =>
 
 /** 候选人行（一人一行，已按并集归并） */
 const filteredRows = computed(() => {
-  const key = ({ pass: 'PASS', fail: 'REJECT', review: 'PENDING_REVIEW' } as Record<string, string>)[tab.value]
+  const key = ({ pass: 'PASS', fail: 'REJECT', review: 'PENDING_REVIEW', failed: 'FAILED' } as Record<string, string>)[tab.value]
   return key ? results.value.filter((r) => r.result === key) : results.value
 })
 const countOf = (result: string) => results.value.filter((r) => r.result === result).length
+
+/** 简历当前状态映射（关键字段守卫用：判定 PASS 但 status=5 -> 显示待补录） */
+const resumeStatusMap = new Map<number, number>()
+/** 全量简历简报（含失败简历，供「处理失败」页签合成行） */
+const allResumeBriefs = ref<ResumeBrief[]>([])
+
+/** 重建状态映射（每次刷新结果前拉取，补录/入库后「待补录」标签随之同步） */
+async function refreshResumeStatusMap() {
+  try {
+    const resumes = await listResumes(undefined, 1000)
+    allResumeBriefs.value = resumes
+    resumeStatusMap.clear()
+    for (const r of resumes) resumeStatusMap.set(r.resume_id, r.status)
+  } catch {
+    // 拉取失败沿用旧映射，不阻塞结果加载
+  }
+}
 
 async function load() {
   const [reqs, jobs, runList] = await Promise.all([listRequirements(), listJobs(), listRuns(100)])
@@ -304,11 +365,20 @@ interface PersonRow {
   resume_id: number
   name: string | null
   original_file_name: string | null
-  result: 'PASS' | 'REJECT' | 'PENDING_REVIEW'
+  result: 'PASS' | 'REJECT' | 'PENDING_REVIEW' | 'FAILED'
   passedJobs: string[]
   firstFail: string
   pendingNote: string
+  /** 判定通过但关键字段缺失 -> 显示「待补录」 */
+  pendingComplete?: boolean
+  /** 处理失败行专用：0 上传失败 / 1 解析失败 / 2 归一化失败（无初筛判定） */
+  failedStatus?: number
+  statusLabel?: string | null
+  failureReason?: string | null
 }
+
+/** 请求序号：需求/岗位快速切换时，慢响应「后发先至」的过期结果直接丢弃 */
+const loadResultsSeq = ref(0)
 
 /**
  * 聚合结果：岗位=全部 -> 需求下每个岗位**最新一次任务**的判定按候选人归并
@@ -316,10 +386,31 @@ interface PersonRow {
  * 岗位=单岗 -> 该岗最新一次任务，同样按人归并。
  */
 async function loadResults() {
+  const seq = ++loadResultsSeq.value
+  await refreshResumeStatusMap()
+  if (seq !== loadResultsSeq.value) return
   const jobs = demandId.value == null
     ? allJobs.value
     : allJobs.value.filter((j) => j.requirement_id === demandId.value)
   const scopeJobs = jobId.value == null ? jobs : jobs.filter((j) => j.job_id === jobId.value)
+
+  // 处理失败简历（上传失败 0 / 解析失败 1 / 归一化失败 2）：
+  // 它们没有初筛判定，但必须出现在结果列表里让 HR 看到失败原因并可重试
+  const failedRows: PersonRow[] = allResumeBriefs.value
+    .filter((r) => [0, 1, 2].includes(r.status))
+    .map((r) => ({
+      result_id: -r.resume_id, // 负数避免与真实判定行冲突
+      resume_id: r.resume_id,
+      name: r.name ?? null,
+      original_file_name: r.original_file_name,
+      result: 'FAILED' as const,
+      passedJobs: [],
+      firstFail: '',
+      pendingNote: '',
+      failedStatus: r.status,
+      statusLabel: r.status_label,
+      failureReason: r.failure_reason,
+    }))
 
   // 每个岗位取最新一条任务（runs 已按 run_id 倒序）
   const latestRuns = scopeJobs
@@ -327,7 +418,7 @@ async function loadResults() {
     .filter((r): r is FilterRun => !!r)
 
   if (!latestRuns.length) {
-    results.value = []
+    if (seq === loadResultsSeq.value) results.value = failedRows
     return
   }
   const merged = await Promise.all(
@@ -336,6 +427,7 @@ async function loadResults() {
       return list.map((r) => ({ ...r, job_name: run.job_name ?? `岗位${run.job_id}` }))
     }),
   )
+  if (seq !== loadResultsSeq.value) return
   const allRows = merged.flat()
 
   // 按候选人聚合：任一岗 PASS -> 通过（通过岗位=目标岗位）；
@@ -363,7 +455,11 @@ async function loadResults() {
     if (!cur.firstFail) cur.firstFail = row.reasons.find((x) => x.passed === false)?.detail ?? ''
     if (!cur.pendingNote) cur.pendingNote = row.reasons.find((x) => x.passed == null)?.detail ?? ''
   }
-  results.value = [...byResume.values()]
+  // 待补录守卫：判定 PASS 但关键字段缺失（status=5），行上显示「待补录」
+  for (const row of byResume.values()) {
+    if (row.result === 'PASS' && resumeStatusMap.get(row.resume_id) === 5) row.pendingComplete = true
+  }
+  if (seq === loadResultsSeq.value) results.value = [...failedRows, ...byResume.values()]
 }
 
 function onDemandChange() {
@@ -458,6 +554,22 @@ async function reparse() {
   await reparseResume(reviewing.value.resume_id)
   toast('已触发重新解析，稍后刷新查看', 'info')
   reviewDrawer.value = false
+}
+
+// ---------------- 处理失败：行级重试 ----------------
+const retrying = ref<number | null>(null)
+
+async function retryParse(row: PersonRow) {
+  retrying.value = row.resume_id
+  try {
+    await reparseResume(row.resume_id)
+    toast('已触发重新解析，稍后刷新查看', 'info')
+    await loadResults()
+  } catch (e) {
+    toast(((e as { friendly?: string }).friendly ?? '触发重试失败'), 'error')
+  } finally {
+    retrying.value = null
+  }
 }
 
 // ---------------- 岗位匹配情况 ----------------

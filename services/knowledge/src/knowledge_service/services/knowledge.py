@@ -134,67 +134,6 @@ class KnowledgeService:
         results, latency = self.retriever.search(query=request.query)
         return SearchResponse(query=request.query, results=results, latency_ms=latency)
 
-<<<<<<< HEAD
-    def chat(self, request: SearchRequest) -> ChatResponse:
-        response, _ = self.chat_with_diagnostics(request)
-        return response
-
-    def chat_with_diagnostics(
-        self, request: SearchRequest
-    ) -> tuple[ChatResponse, RetrievalDiagnostics]:
-        outcome = self.retriever.search_with_diagnostics(
-            query=request.query,
-            document_types=request.document_types,
-            metadata_filter=request.metadata_filter,
-            top_k=request.top_k,
-        )
-        response = self._build_chat_response(
-            query=request.query,
-            results=outcome.results,
-            latency_ms=outcome.latency_ms,
-        )
-        return response, outcome.diagnostics
-
-    def _build_chat_response(
-        self,
-        query: str,
-        results: list[SearchResult],
-        latency_ms: float,
-    ) -> ChatResponse:
-        if not results or results[0].rerank_score < self.settings.knowledge_refusal_threshold:
-            return ChatResponse(
-                query=query,
-                answer="抱歉，知识库中没有找到足够可靠的相关内容。",
-                is_refused=True,
-                citations=[],
-                latency_ms=latency_ms,
-            )
-
-        citations = [
-            Citation(
-                chunk_id=result.chunk_id,
-                talent_card_id=result.talent_card_id,
-                section=str(result.metadata.get("section", "正文")),
-                snippet=result.content[:120],
-                relevance_score=result.rerank_score,
-            )
-            for result in results
-        ]
-        top = results[0]
-        text = re.sub(r"\s+", " ", top.content).strip()
-        answer = (
-            f"根据知识库检索结果：{text[:500]} "
-            f"[来源: {top.talent_card_id} - {top.metadata.get('section', '正文')}]"
-        )
-        return ChatResponse(
-            query=query,
-            answer=answer,
-            is_refused=False,
-            citations=citations,
-            latency_ms=latency_ms,
-        )
-=======
     def search_with_diagnostics(self, request: SearchRequest) -> RetrievalOutcome:
         """供离线评估使用；线上接口只返回标准检索响应。"""
         return self.retriever.search_with_diagnostics(query=request.query)
->>>>>>> origin/develop

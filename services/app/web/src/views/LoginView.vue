@@ -58,14 +58,15 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Lock, Search, User } from '@element-plus/icons-vue'
-import { login, setToken } from '../api'
+import { login, setToken, setUsername } from '../api'
 import { toast } from '../components/toast'
 
 defineOptions({ name: 'LoginView' })
 
 const router = useRouter()
+const route = useRoute()
 const username = ref('')
 const password = ref('')
 const loading = ref(false)
@@ -79,8 +80,11 @@ async function submit() {
       password: password.value,
     })
     setToken(resp.session_token)
+    setUsername(resp.user.username)
     toast(`欢迎回来，${resp.user.display_name}`)
-    router.replace('/')
+    // 守卫携带的原目标页优先（如被拦截时正在访问的页面）
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+    router.replace(redirect)
   } catch (e) {
     toast(((e as { friendly?: string }).friendly ?? '登录失败，请稍后重试'), 'error')
   } finally {

@@ -324,7 +324,7 @@ class TalentPoolOut(BaseModel):
     created_by: str
     created_at: str | None
     knowledge_sync_status: Literal["pending", "syncing", "success", "failed"]
-    knowledge_document_id: str | None
+    knowledge_talent_card_id: str | None
     knowledge_chunk_count: int | None
     knowledge_sync_error: str | None
     knowledge_synced_at: str | None

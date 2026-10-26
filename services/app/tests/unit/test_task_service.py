@@ -86,7 +86,7 @@ def test_task_message_persists_and_creates_pending_action(db, monkeypatch):
     monkeypatch.setattr(
         task_service.agent_service,
         "chat",
-        lambda db, message, client=None, history=None: AgentChatResponse(
+        lambda db, message, completion_fn=None, history=None: AgentChatResponse(
             answer="规则结果为 PASS，等待 HR 确认。",
             tool_traces=[
                 AgentToolTrace(

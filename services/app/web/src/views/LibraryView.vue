@@ -62,6 +62,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { deleteResume, getResume, listResumes, reparseResume, restoreResume, resumeStats } from '../api'
 import type { ResumeBrief, ResumeDetail } from '../types'
@@ -77,7 +78,12 @@ const STATUS: Record<number, string> = {
 
 const rows = ref<ResumeBrief[]>([])
 const stats = ref<{ total?: number; by_status?: Record<string, number> }>({})
-const statusFilter = ref<number | null>(null)
+// 支持 ?status=4 直达（工作台"已入库"卡片深链）
+const route = useRoute()
+const statusQuery = Number(route.query.status)
+const statusFilter = ref<number | null>(
+  Number.isInteger(statusQuery) && statusQuery >= 0 && statusQuery <= 10 ? statusQuery : null,
+)
 const detail = ref<ResumeDetail | null>(null)
 
 async function load() {

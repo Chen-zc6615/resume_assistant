@@ -60,6 +60,20 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  web:
+    build: ./services/app/web
+    container_name: resume-assistant-web
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "127.0.0.1:18080:80"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   parser:
     image: ghcr.io/chen-zc6615/resume_assistant:parser-${IMAGE_TAG:-latest}
     container_name: resume-assistant-parser

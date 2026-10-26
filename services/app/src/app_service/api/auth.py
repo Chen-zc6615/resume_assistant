@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app_service.core.config import get_settings
 from app_service.core.auth_security import hash_password
 from app_service.db.session import SessionLocal
 from app_service.models.db_models import UserAccount
@@ -87,7 +88,6 @@ def health() -> dict:
 
 def ensure_admin_user(db: Session) -> None:
     """首次启动（空表）时 seed 管理员账号，幂等。"""
-    from app_service.core.config import get_settings
 
     if db.scalar(select(UserAccount.user_id).limit(1)) is not None:
         return
@@ -95,7 +95,7 @@ def ensure_admin_user(db: Session) -> None:
     db.add(
         UserAccount(
             username="hr_admin",
-            display_name="李婷",
+            display_name="小李子",
             password_hash=hash_password(settings.auth_admin_password),
             status="normal",
         )

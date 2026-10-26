@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
@@ -117,8 +118,9 @@ def send_message(
     actor: str,
     message: str,
     *,
-    client: Any | None = None,
+    completion_fn: Callable[..., Any] | None = None,
 ) -> tuple[AgentMessage, AgentMessage, list[AgentAction]]:
+    """发送消息并持久化 Agent 回答；completion_fn 缺省时走 model_client Agent 通道。"""
     task = get_task(db, task_id, actor)
     history = [
         {"role": item.role, "content": item.content}
@@ -130,7 +132,7 @@ def send_message(
     db.add(user_message)
     db.flush()
 
-    response = agent_service.chat(db, message.strip(), client=client, history=history)
+    response = agent_service.chat(db, message.strip(), completion_fn=completion_fn, history=history)
     assistant_message = AgentMessage(
         task_id=task.task_id,
         role="assistant",
@@ -159,7 +161,7 @@ def send_message_stream(
     actor: str,
     message: str,
     *,
-    client: Any | None = None,
+    completion_fn: Callable[..., Any] | None = None,
 ):
     """send_message 的流式版本：转发 agent 事件，落库契约与同步版一致。
 
@@ -182,7 +184,7 @@ def send_message_stream(
 
     final = None
     for event in agent_service.chat_stream(
-        db, message.strip(), client=client, history=history
+        db, message.strip(), completion_fn=completion_fn, history=history
     ):
         if event["type"] == "final":
             final = event["response"]

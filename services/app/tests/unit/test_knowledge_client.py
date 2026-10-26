@@ -157,13 +157,12 @@ def test_rejects_empty_input_before_http(monkeypatch):
     assert fake.calls == []
 
 
-def test_search_sends_only_query_and_parses_results(monkeypatch):
+def test_search_documents_sends_contract_and_parses_results(monkeypatch):
     fake = _FakeClient(
         [
             _FakeResponse(
                 200,
                 {
-                    "query": "Python 候选人",
                     "results": [
                         {
                             "chunk_id": "talent-1:abc",
@@ -181,14 +180,14 @@ def test_search_sends_only_query_and_parses_results(monkeypatch):
     )
     _patch_client(monkeypatch, fake)
 
-    result = knowledge_client.search("  Python 候选人  ")
+    result = knowledge_client.search_documents(query="  Python 候选人  ", top_k=5)
 
     assert fake.calls == [
         (
             "POST",
             "http://127.0.0.1:8001/api/v1/search",
-            {"query": "Python 候选人"},
+            {"query": "Python 候选人", "document_types": None, "metadata_filter": None, "top_k": 5},
         )
     ]
-    assert result.results[0].document_id == "talent-1"
-    assert result.results[0].rerank_score == 0.91
+    assert isinstance(result, list) and result[0]["document_id"] == "talent-1"
+    assert result[0]["rerank_score"] == 0.91

@@ -104,6 +104,7 @@ import {
   decideTaskAction, getTask, sendTaskMessageStream,
 } from '../api'
 import { toast } from './toast'
+import { toolLabel } from '../utils/agent'
 import type { TaskAction, TaskDetail, TaskMessage } from '../types'
 
 const props = defineProps<{ taskId: number }>()
@@ -230,19 +231,6 @@ function replaceAction(updated: TaskAction) {
   if (!detail.value) return
   const index = detail.value.actions.findIndex((item) => item.action_id === updated.action_id)
   if (index >= 0) detail.value.actions[index] = updated
-}
-
-function toolLabel(tool: string) {
-  return ({
-    find_candidate_by_name: '知识库查找候选人',
-    list_open_jobs: '读取开放岗位',
-    evaluate_candidate_for_job: '执行岗位硬规则',
-    get_dashboard_summary: '读取看板',
-    list_requirements: '读取需求',
-    get_requirement_overview: '读取需求详情',
-    search_candidates: '查询候选人',
-    get_resume_screening_detail: '读取初筛明细',
-  } as Record<string, string>)[tool] || tool
 }
 
 function actionLabel(status: TaskAction['status']) {
