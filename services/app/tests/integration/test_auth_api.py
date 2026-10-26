@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import pytest
+from app_service.app import create_app
 from app_service.core.auth_security import hash_password
 from app_service.db.session import SessionLocal
 from app_service.models.db_models import UserAccount
 from fastapi.testclient import TestClient
-
-from app_service.app import create_app
 
 TEST_USER = {
     "username": "auth_api_tester",

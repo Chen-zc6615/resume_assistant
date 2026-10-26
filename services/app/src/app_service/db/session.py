@@ -3,8 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Generator  #生成器
+
 from sqlalchemy import create_engine  #创建数据库引擎
-from sqlalchemy.orm import Session, sessionmaker  #session，一次和数据库的对话， sessionmaker会话工厂
+from sqlalchemy.orm import (  #session，一次和数据库的对话， sessionmaker会话工厂
+    Session,
+    sessionmaker,
+)
+
 from app_service.core.config import get_settings
 from app_service.db.base import Base
 

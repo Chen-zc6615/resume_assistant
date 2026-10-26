@@ -12,8 +12,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app_service.core.config import get_settings
 from app_service.core.auth_security import hash_password
+from app_service.core.config import get_settings
 from app_service.db.session import SessionLocal
 from app_service.models.db_models import UserAccount
 from app_service.models.schemas import AuthUserOut, LoginRequest
