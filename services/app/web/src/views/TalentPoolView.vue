@@ -1,43 +1,63 @@
 <template>
   <div class="space-y-5">
-    <!-- 统计 -->
-    <section class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      <div class="bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-shadow hover:shadow-sm">
-        <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
-          <el-icon :size="20"><FolderChecked /></el-icon>
+    <!-- 统计（前三卡点击过滤列表，与页签互斥；沉淀卡切页签） -->
+    <section class="grid grid-cols-2 xl:grid-cols-4 gap-2.5">
+      <button
+        type="button"
+        class="w-full min-w-0 text-left bg-card rounded-xl border px-3 py-2 flex items-center gap-2 transition-colors cursor-pointer"
+        :class="listFilter === 'passed' ? 'border-good ring-1 ring-good/30' : 'border-hairline hover:border-good'"
+        @click="toggleFilter('passed')"
+      >
+        <span class="w-7 h-7 rounded-lg bg-good-soft text-good flex items-center justify-center">
+          <el-icon :size="15"><FolderChecked /></el-icon>
+        </span>
+        <div class="leading-tight">
+          <div class="text-[15px] font-semibold text-ink-900 leading-tight">{{ poolRows.length }}</div>
+          <div class="text-[10px] text-ink-500 whitespace-nowrap truncate">初筛通过 · 待审核/已入库</div>
         </div>
-        <div>
-          <div class="text-2xl font-semibold text-ink-900 tracking-tight">{{ poolRows.length }}</div>
-          <div class="text-xs text-ink-500">本次岗位通过人才库</div>
+      </button>
+      <button
+        type="button"
+        class="w-full min-w-0 text-left bg-card rounded-xl border px-3 py-2 flex items-center gap-2 transition-colors cursor-pointer"
+        :class="listFilter === 'interview' ? 'border-brand-400 ring-1 ring-brand-200' : 'border-hairline hover:border-brand-300'"
+        @click="toggleFilter('interview')"
+      >
+        <span class="w-7 h-7 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
+          <el-icon :size="15"><ChatDotRound /></el-icon>
+        </span>
+        <div class="leading-tight">
+          <div class="text-[15px] font-semibold text-ink-900 leading-tight">{{ invitedCount }}</div>
+          <div class="text-[10px] text-ink-500 whitespace-nowrap truncate">已进入面试流程</div>
         </div>
-      </div>
-      <div class="bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-shadow hover:shadow-sm">
-        <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
-          <el-icon :size="20"><ChatDotRound /></el-icon>
+      </button>
+      <button
+        type="button"
+        class="w-full min-w-0 text-left bg-card rounded-xl border px-3 py-2 flex items-center gap-2 transition-colors cursor-pointer"
+        :class="listFilter === 'todo' ? 'border-warn ring-1 ring-warn/30' : 'border-hairline hover:border-warn'"
+        @click="toggleFilter('todo')"
+      >
+        <span class="w-7 h-7 rounded-lg bg-warn-soft text-warn flex items-center justify-center">
+          <el-icon :size="15"><User /></el-icon>
+        </span>
+        <div class="leading-tight">
+          <div class="text-[15px] font-semibold text-ink-900 leading-tight">{{ todoCount }}</div>
+          <div class="text-[10px] text-ink-500 whitespace-nowrap truncate">待复核 / 待补齐</div>
         </div>
-        <div>
-          <div class="text-2xl font-semibold text-ink-900 tracking-tight">{{ invitedCount }}</div>
-          <div class="text-xs text-ink-500">已进入面试流程</div>
+      </button>
+      <button
+        type="button"
+        class="w-full min-w-0 text-left bg-card rounded-xl border px-3 py-2 flex items-center gap-2 transition-colors cursor-pointer"
+        :class="tab === 'talent' ? 'border-brand-400 ring-1 ring-brand-200' : 'border-hairline hover:border-brand-300'"
+        @click="switchTab('talent')"
+      >
+        <span class="w-7 h-7 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
+          <el-icon :size="15"><Collection /></el-icon>
+        </span>
+        <div class="leading-tight">
+          <div class="text-[15px] font-semibold text-ink-900 leading-tight">{{ talentEntries.length }}</div>
+          <div class="text-[10px] text-ink-500 whitespace-nowrap truncate">沉淀候选人才库</div>
         </div>
-      </div>
-      <div class="bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-shadow hover:shadow-sm">
-        <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
-          <el-icon :size="20"><User /></el-icon>
-        </div>
-        <div>
-          <div class="text-2xl font-semibold text-ink-900 tracking-tight">{{ todoCount }}</div>
-          <div class="text-xs text-ink-500">待复核 / 待补齐 / 待审核</div>
-        </div>
-      </div>
-      <div class="bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-shadow hover:shadow-sm">
-        <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
-          <el-icon :size="20"><Collection /></el-icon>
-        </div>
-        <div>
-          <div class="text-2xl font-semibold text-ink-900 tracking-tight">{{ talentEntries.length }}</div>
-          <div class="text-xs text-ink-500">沉淀候选人才库</div>
-        </div>
-      </div>
+      </button>
     </section>
 
     <section class="bg-card rounded-xl border border-hairline overflow-hidden">
@@ -48,7 +68,7 @@
             :key="t.key" type="button"
             class="px-4 py-1.5 rounded-lg text-xs font-medium"
             :class="tab === t.key ? 'bg-card text-ink-900 shadow-sm' : 'text-ink-500'"
-            @click="tab = t.key"
+            @click="switchTab(t.key)"
           >{{ t.label }}</button>
         </div>
         <div class="flex items-center gap-2">
@@ -64,6 +84,15 @@
             岗位硬性条件通过的简历在 HR 复核后进入此库：可复核候选人信息、标记面试状态、发起面试邀约或沉淀储备。
           </p>
         </div>
+        <!-- 筛选行：面试状态 + 姓名搜索（作用于本次岗位通过人才库列表） -->
+        <div class="px-6 py-2.5 border-b border-hairline-soft flex flex-wrap items-center gap-3">
+          <el-select v-model="interviewFilter" class="w-44" size="small" placeholder="全部面试状态">
+            <el-option :value="null" label="全部面试状态" />
+            <el-option :value="-1" label="未进入流程" />
+            <el-option v-for="(label, s) in INTERVIEW_LABELS" :key="s" :value="Number(s)" :label="label" />
+          </el-select>
+          <el-input v-model="search" class="w-52" size="small" placeholder="搜索姓名 / 文件名 / 编号" clearable />
+        </div>
         <div class="overflow-x-auto">
           <table class="w-full min-w-[1100px] text-sm">
             <thead>
@@ -77,7 +106,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-hairline-soft">
-              <tr v-for="row in poolRows" :key="row.resume_id" class="hover:bg-hairline-soft">
+              <tr v-for="row in candidateRows" :key="row.resume_id" class="hover:bg-hairline-soft">
                 <td class="px-6 py-4">
                   <div class="flex items-center gap-3">
                     <span class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 text-xs font-semibold flex items-center justify-center shrink-0">
@@ -115,7 +144,7 @@
                   </div>
                 </td>
               </tr>
-              <tr v-if="!poolRows.length">
+              <tr v-if="!candidateRows.length">
                 <td colspan="6" class="px-6 py-14 text-center">
                   <p class="text-sm text-ink-500">暂无通过初筛的候选人</p>
                   <p class="text-xs text-ink-400 mt-1">简历通过岗位硬性条件初筛后将出现在此库</p>
@@ -371,11 +400,55 @@ const todoCount = computed(
   () => allResumes.value.filter((r) => [5, 6].includes(r.status)).length,
 )
 
+// ---------------- 统计卡过滤（与页签互斥） ----------------
+const listFilter = ref<'all' | 'passed' | 'interview' | 'todo'>('all')
+const interviewFilter = ref<number | null | -1>(null)
+const search = ref('')
+
+function toggleFilter(key: 'passed' | 'interview' | 'todo') {
+  listFilter.value = listFilter.value === key ? 'all' : key
+  if (listFilter.value !== 'all') tab.value = 'pool'
+}
+
+function switchTab(key: 'pool' | 'talent') {
+  tab.value = key
+  if (key === 'talent') listFilter.value = 'all' // 切到沉淀库时清除列表过滤，避免两处同时"选中"
+}
+
+/** 表格实际渲染行：统计卡过滤 + 面试状态筛选 + 姓名搜索 */
+const candidateRows = computed(() => {
+  let rows = poolRows.value
+  if (listFilter.value === 'interview') rows = rows.filter((r) => r.interview_status != null && r.interview_status <= 2)
+  else if (listFilter.value === 'todo') rows = allResumes.value.filter((r) => [5, 6].includes(r.status))
+  // 面试状态筛选：-1=未进入流程（interview_status 为空）
+  if (interviewFilter.value === -1) rows = rows.filter((r) => r.interview_status == null)
+  else if (interviewFilter.value != null) rows = rows.filter((r) => r.interview_status === interviewFilter.value)
+  const kw = search.value.trim().toLowerCase()
+  if (kw) {
+    rows = rows.filter((r) =>
+      (r.name ?? '').toLowerCase().includes(kw)
+      || r.original_file_name.toLowerCase().includes(kw)
+      || String(r.resume_id).includes(kw),
+    )
+  }
+  return rows
+})
+
 // ---------------- 数据加载 ----------------
+/** 请求序号：快速刷新时丢弃慢响应的过期结果 */
+const loadSeq = ref(0)
+
 async function load() {
-  const [resumes, pool] = await Promise.all([listResumes(), listTalentPool()])
-  allResumes.value = resumes
-  talentEntries.value = pool
+  const seq = ++loadSeq.value
+  try {
+    const [resumes, pool] = await Promise.all([listResumes(), listTalentPool()])
+    if (seq === loadSeq.value) {
+      allResumes.value = resumes
+      talentEntries.value = pool
+    }
+  } catch (e) {
+    toast(((e as { friendly?: string }).friendly ?? '数据加载失败'), 'error')
+  }
 }
 
 function interviewTagType(s: number) {

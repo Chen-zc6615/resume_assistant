@@ -16,12 +16,12 @@
         <router-link
           v-for="item in navItems" :key="item.path" :to="item.path"
           class="relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors"
-          :class="$route.path === item.path
+          :class="isActive(item.path)
             ? 'bg-brand-500/10 text-ink-900 font-medium'
             : 'text-ink-600 hover:bg-page hover:text-ink-900'"
         >
           <span
-            v-if="$route.path === item.path"
+            v-if="isActive(item.path)"
             class="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-brand-500"
           />
           <el-icon :size="18"><component :is="item.icon" /></el-icon>
@@ -153,7 +153,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  ArrowDown, ArrowRight, Bell, Briefcase, ChatLineRound, DataAnalysis, Files, Loading,
+  ArrowDown, ArrowRight, Bell, Briefcase, ChatDotRound, ChatLineRound, DataAnalysis, Files, Loading,
   Monitor, Plus, Search, Upload,
 } from '@element-plus/icons-vue'
 import AppToast from './components/AppToast.vue'
@@ -172,7 +172,13 @@ const navItems = [
   { path: '/upload', title: '简历上传', icon: Upload },
   { path: '/results', title: '筛选结果查看', icon: Files },
   { path: '/talent', title: '人才库管理', icon: DataAnalysis },
+  { path: '/knowledge', title: '简历筛选助手', icon: ChatDotRound },
 ]
+
+// 激活态前缀匹配：/knowledge/12 也高亮 /knowledge（首页必须全等，避免所有路由命中 /）
+function isActive(path: string): boolean {
+  return path === '/' ? route.path === '/' : route.path === path || route.path.startsWith(path + '/')
+}
 
 // ---- 任务组：侧栏内就地展开任务子列表，点子项进入对话 ----
 const navTasks = ref<Task[]>([])
@@ -262,4 +268,13 @@ function notify() {
 <style scoped>
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+</style>
+
+<style>
+/* 聊天页全局样式（/knowledge）：细滚动条 */
+.chat-scroll { scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.45) transparent; }
+.chat-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.chat-scroll::-webkit-scrollbar-track { background: transparent; }
+.chat-scroll::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.45); border-radius: 3px; }
+.chat-scroll::-webkit-scrollbar-thumb:hover { background: rgba(100,116,139,0.65); }
 </style>

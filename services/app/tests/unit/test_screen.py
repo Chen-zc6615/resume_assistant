@@ -10,7 +10,6 @@ from app_service.services.screen_service import _skill_matches, evaluate_profile
 
 def make_profile(**kw) -> ResumeProfile:
     defaults = dict(
-        profile_id=1,
         resume_id=1,
         name="测试候选人",
         gender=None,

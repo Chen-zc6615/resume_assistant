@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated, Literal
 
 from pydantic import (
@@ -69,7 +70,7 @@ class EducationExperience(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     education_id: PositiveId | None = Field(default=None, description="入库前可为空")
-    profile_id: PositiveId | None = Field(default=None, description="所属归一化简历 ID")
+    resume_id: PositiveId | None = Field(default=None, description="所属简历 ID")
     school: NonEmptyText = Field(..., description="学校名称")
     major: str | None = Field(default=None, description="专业，未知为 None")
     education_level: str | None = Field(default=None, description="学历")
@@ -91,7 +92,7 @@ class ProjectExperience(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     project_id: PositiveId | None = Field(default=None, description="入库前可为空")
-    profile_id: PositiveId | None = Field(default=None, description="所属归一化简历 ID")
+    resume_id: PositiveId | None = Field(default=None, description="所属简历 ID")
     project_name: NonEmptyText = Field(..., description="项目名称")
     role: str | None = Field(default=None, description="担任角色")
     start_date: YearMonth | None = Field(default=None, description="开始年月 YYYY-MM")
@@ -110,7 +111,7 @@ class WorkExperience(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     work_id: PositiveId | None = Field(default=None, description="入库前可为空")
-    profile_id: PositiveId | None = Field(default=None, description="所属归一化简历 ID")
+    resume_id: PositiveId | None = Field(default=None, description="所属简历 ID")
     company: NonEmptyText = Field(..., description="公司名称")
     position: NonEmptyText = Field(..., description="职位名称")
     start_date: YearMonth | None = Field(default=None, description="开始年月 YYYY-MM")
@@ -133,7 +134,6 @@ class ResumeProfileData(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    profile_id: PositiveId | None = Field(default=None, description="由数据库生成，入库前可为空")
     resume_id: PositiveId = Field(..., description="对应原始简历 ID")
     name: NonEmptyText = Field(..., description="姓名，不能为空或仅包含空白")
     gender: int | None = Field(default=None, description="性别 0-男 1-女，未知为 None")
@@ -324,7 +324,7 @@ class TalentPoolOut(BaseModel):
     created_by: str
     created_at: str | None
     knowledge_sync_status: Literal["pending", "syncing", "success", "failed"]
-    knowledge_document_id: str | None
+    knowledge_talent_card_id: str | None
     knowledge_chunk_count: int | None
     knowledge_sync_error: str | None
     knowledge_synced_at: str | None
@@ -424,7 +424,6 @@ class FilterResultOut(BaseModel):
     result_id: int
     run_id: int
     resume_id: int
-    profile_id: int | None
     result: str
     reasons: list[ReasonItem]
     name: str | None = None
@@ -457,11 +456,83 @@ class AgentToolTrace(BaseModel):
     tool: str
     arguments: dict[str, object]
     success: bool
+    result: dict[str, object] | None = None
 
 
 class AgentChatResponse(BaseModel):
     answer: str
     tool_traces: list[AgentToolTrace] = Field(default_factory=list)
+    intent: str | None = None
+    trace_id: str | None = None
+    metrics: dict[str, object] = Field(default_factory=dict)
+
+
+class AgentTaskCreate(BaseModel):
+    title: str | None = Field(default=None, max_length=120)
+
+
+class AgentTaskUpdate(BaseModel):
+    title: NonEmptyText = Field(max_length=120)
+
+
+class AgentTaskMessageCreate(BaseModel):
+    message: NonEmptyText = Field(max_length=2000)
+
+
+class AgentMessageOut(BaseModel):
+    message_id: int
+    task_id: int
+    role: Literal["user", "assistant"]
+    content: str
+    tool_traces: list[AgentToolTrace] = Field(default_factory=list)
+    intent: str | None = None
+    trace_id: str | None = None
+    metrics: dict[str, object] = Field(default_factory=dict)
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AgentActionOut(BaseModel):
+    action_id: int
+    task_id: int
+    action_type: str
+    status: str
+    payload: dict[str, object]
+    result: dict[str, object] | None
+    decision_reason: str | None
+    decided_by: str | None
+    decided_at: datetime | None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AgentTaskOut(BaseModel):
+    task_id: int
+    title: str
+    status: str
+    created_by: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AgentTaskDetail(AgentTaskOut):
+    messages: list[AgentMessageOut] = Field(default_factory=list)
+    actions: list[AgentActionOut] = Field(default_factory=list)
+
+
+class AgentTaskMessageResponse(BaseModel):
+    user_message: AgentMessageOut
+    assistant_message: AgentMessageOut
+    new_actions: list[AgentActionOut] = Field(default_factory=list)
+
+
+class AgentActionDecision(BaseModel):
+    approved: bool
+    reason: str | None = Field(default=None, max_length=500)
 
 
 #======================= User Verify===================

@@ -2,7 +2,7 @@
 
 主服务只通过此模块调用 ``services/knowledge``，不直接依赖知识库内部实现。
 人才资料发送脱敏结构化数据，由知识库生成 Wiki；通用文档也可直接写入。
-写入使用 PUT，同一 ``document_id`` 会被覆盖，因而可以安全重试。
+写入使用 PUT，同一 ``talent_card_id`` 会被覆盖，因而可以安全重试。
 """
 
 from __future__ import annotations
@@ -27,24 +27,8 @@ class KnowledgeServiceError(RuntimeError):
 
 @dataclass(frozen=True)
 class DocumentWriteResult:
-    document_id: str
+    talent_card_id: str
     chunk_count: int
-
-
-@dataclass(frozen=True)
-class KnowledgeSearchResult:
-    chunk_id: str
-    document_id: str
-    content: str
-    metadata: dict[str, Any]
-    rerank_score: float
-
-
-@dataclass(frozen=True)
-class KnowledgeSearchResponse:
-    query: str
-    results: list[KnowledgeSearchResult]
-    latency_ms: float
 
 
 def _detail(response: httpx.Response) -> str:
@@ -68,15 +52,15 @@ def _timeout() -> httpx.Timeout:
 
 def upsert_document(
     *,
-    document_id: str,
+    talent_card_id: str,
     document_type: DocumentType,
     content: str,
     metadata: dict[str, Any] | None = None,
 ) -> DocumentWriteResult:
     """新增或覆盖已经生成好的通用知识库文档。"""
 
-    if not document_id.strip():
-        raise ValueError("document_id 不能为空")
+    if not talent_card_id.strip():
+        raise ValueError("talent_card_id 不能为空")
     if not content.strip():
         raise ValueError("content 不能为空")
 
@@ -85,22 +69,22 @@ def upsert_document(
         "content": content,
         "metadata": metadata or {},
     }
-    return _put(document_id, f"/api/v1/documents/{document_id}", body)
+    return _put(talent_card_id, f"/api/v1/talent-cards/{talent_card_id}", body)
 
 
 def upsert_talent_profile(
-    *, document_id: str, profile: dict[str, Any]
+    *, talent_card_id: str, profile: dict[str, Any]
 ) -> DocumentWriteResult:
     """发送脱敏归一化数据，由 knowledge 服务生成 Wiki 卡片并建立索引。"""
 
-    if not document_id.strip():
-        raise ValueError("document_id 不能为空")
+    if not talent_card_id.strip():
+        raise ValueError("talent_card_id 不能为空")
     if not profile:
         raise ValueError("profile 不能为空")
-    return _put(document_id, f"/api/v1/talent-profiles/{document_id}", profile)
+    return _put(talent_card_id, f"/api/v1/talent-profiles/{talent_card_id}", profile)
 
 
-def _put(document_id: str, path: str, body: dict[str, Any]) -> DocumentWriteResult:
+def _put(talent_card_id: str, path: str, body: dict[str, Any]) -> DocumentWriteResult:
     settings = get_settings()
     url = f"{settings.knowledge_service_base_url.rstrip('/')}{path}"
     attempts = settings.knowledge_http_max_retries + 1
@@ -113,10 +97,10 @@ def _put(document_id: str, path: str, body: dict[str, Any]) -> DocumentWriteResu
         except httpx.HTTPError as exc:
             last_error = f"知识库服务不可用：{exc}"
             logger.warning(
-                "知识库文档写入失败（%s/%s）document_id=%s: %s",
+                "知识库文档写入失败（%s/%s）talent_card_id=%s: %s",
                 attempt,
                 attempts,
-                document_id,
+                talent_card_id,
                 exc,
             )
         else:
@@ -124,7 +108,7 @@ def _put(document_id: str, path: str, body: dict[str, Any]) -> DocumentWriteResu
                 try:
                     payload = response.json()
                     return DocumentWriteResult(
-                        document_id=str(payload["document_id"]),
+                        talent_card_id=str(payload["talent_card_id"]),
                         chunk_count=int(payload["chunk_count"]),
                     )
                 except (KeyError, TypeError, ValueError) as exc:
@@ -135,11 +119,11 @@ def _put(document_id: str, path: str, body: dict[str, Any]) -> DocumentWriteResu
                 raise KnowledgeServiceError(f"知识库拒绝写入文档：{detail}")
             last_error = f"知识库服务不可用：{detail}"
             logger.warning(
-                "知识库文档写入返回 %s（%s/%s）document_id=%s",
+                "知识库文档写入返回 %s（%s/%s）talent_card_id=%s",
                 response.status_code,
                 attempt,
                 attempts,
-                document_id,
+                talent_card_id,
             )
 
         if attempt < attempts:
@@ -148,16 +132,16 @@ def _put(document_id: str, path: str, body: dict[str, Any]) -> DocumentWriteResu
     raise KnowledgeServiceError(last_error)
 
 
-def delete_document(document_id: str) -> None:
+def delete_document(talent_card_id: str) -> None:
     """删除知识库文档；连接错误和服务端错误可按配置重试。"""
 
-    if not document_id.strip():
-        raise ValueError("document_id 不能为空")
+    if not talent_card_id.strip():
+        raise ValueError("talent_card_id 不能为空")
 
     settings = get_settings()
     url = (
         f"{settings.knowledge_service_base_url.rstrip('/')}"
-        f"/api/v1/documents/{document_id}"
+        f"/api/v1/talent-cards/{talent_card_id}"
     )
     attempts = settings.knowledge_http_max_retries + 1
     last_error = "知识库服务不可用"
@@ -169,10 +153,10 @@ def delete_document(document_id: str) -> None:
         except httpx.HTTPError as exc:
             last_error = f"知识库服务不可用：{exc}"
             logger.warning(
-                "知识库文档删除失败（%s/%s）document_id=%s: %s",
+                "知识库文档删除失败（%s/%s）talent_card_id=%s: %s",
                 attempt,
                 attempts,
-                document_id,
+                talent_card_id,
                 exc,
             )
         else:
@@ -183,11 +167,11 @@ def delete_document(document_id: str) -> None:
                 raise KnowledgeServiceError(f"知识库拒绝删除文档：{detail}")
             last_error = f"知识库服务不可用：{detail}"
             logger.warning(
-                "知识库文档删除返回 %s（%s/%s）document_id=%s",
+                "知识库文档删除返回 %s（%s/%s）talent_card_id=%s",
                 response.status_code,
                 attempt,
                 attempts,
-                document_id,
+                talent_card_id,
             )
 
         if attempt < attempts:
@@ -196,22 +180,34 @@ def delete_document(document_id: str) -> None:
     raise KnowledgeServiceError(last_error)
 
 
-def search(query: str) -> KnowledgeSearchResponse:
-    """检索人才知识库；结果供主服务 Agent 组织最终回答。"""
+def search_documents(
+    *,
+    query: str,
+    document_types: list[DocumentType] | None = None,
+    metadata_filter: dict[str, Any] | None = None,
+    top_k: int = 10,
+) -> list[dict[str, Any]]:
+    """查询知识库并返回受控结果；Agent 用它发现候选人的 resume_id。"""
 
-    normalized_query = query.strip()
-    if not normalized_query:
-        raise ValueError("query 不能为空")
+    if len(query.strip()) < 2:
+        raise ValueError("检索词至少需要 2 个字符")
+    if not 1 <= top_k <= 20:
+        raise ValueError("top_k 必须在 1 到 20 之间")
 
     settings = get_settings()
     url = f"{settings.knowledge_service_base_url.rstrip('/')}/api/v1/search"
+    body = {
+        "query": query.strip(),
+        "document_types": document_types,
+        "metadata_filter": metadata_filter,
+        "top_k": top_k,
+    }
     attempts = settings.knowledge_http_max_retries + 1
     last_error = "知识库服务不可用"
-
     for attempt in range(1, attempts + 1):
         try:
             with httpx.Client(timeout=_timeout()) as client:
-                response = client.post(url, json={"query": normalized_query})
+                response = client.post(url, json=body)
         except httpx.HTTPError as exc:
             last_error = f"知识库服务不可用：{exc}"
             logger.warning("知识库检索失败（%s/%s）: %s", attempt, attempts, exc)
@@ -219,36 +215,17 @@ def search(query: str) -> KnowledgeSearchResponse:
             if response.status_code == 200:
                 try:
                     payload = response.json()
-                    results = [
-                        KnowledgeSearchResult(
-                            chunk_id=str(item["chunk_id"]),
-                            document_id=str(item["document_id"]),
-                            content=str(item["content"]),
-                            metadata=dict(item.get("metadata") or {}),
-                            rerank_score=float(item["rerank_score"]),
-                        )
-                        for item in payload["results"]
-                    ]
-                    return KnowledgeSearchResponse(
-                        query=str(payload["query"]),
-                        results=results,
-                        latency_ms=float(payload["latency_ms"]),
-                    )
+                    results = payload["results"]
+                    if not isinstance(results, list):
+                        raise TypeError("results 不是数组")
+                    return [item for item in results if isinstance(item, dict)]
                 except (KeyError, TypeError, ValueError) as exc:
                     raise KnowledgeServiceError("知识库返回了无效的检索结果") from exc
-
             detail = _detail(response)
-            if response.status_code < 500:
-                raise KnowledgeServiceError(f"知识库拒绝检索：{detail}")
+            if response.status_code < 500 and response.status_code != 429:
+                raise KnowledgeServiceError(f"知识库检索失败：{detail}")
             last_error = f"知识库服务不可用：{detail}"
-            logger.warning(
-                "知识库检索返回 %s（%s/%s）",
-                response.status_code,
-                attempt,
-                attempts,
-            )
-
+            logger.warning("知识库检索返回 %s（%s/%s）", response.status_code, attempt, attempts)
         if attempt < attempts:
-            time.sleep(settings.knowledge_http_retry_backoff_seconds)
-
+            time.sleep(settings.knowledge_http_retry_backoff_seconds * attempt)
     raise KnowledgeServiceError(last_error)

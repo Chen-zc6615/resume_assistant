@@ -219,6 +219,11 @@ export interface TaskMessage {
   content: string
   tool_traces: TaskToolTrace[]
   created_at: string
+  /** 后端 AgentMessageOut 已随落库消息下发，前端此前未接 */
+  intent?: string | null
+  trace_id?: string | null
+  /** 含 intent_reason / llm_calls / tool_calls / successful_tools */
+  metrics?: Record<string, unknown> | null
 }
 
 export interface TaskAction {

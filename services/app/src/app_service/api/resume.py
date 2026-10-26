@@ -65,7 +65,6 @@ def brief_from(resume: Resume) -> ResumeBrief:
 
 def profile_to_data(profile: ResumeProfile) -> ResumeProfileData:
     return ResumeProfileData(
-        profile_id=profile.profile_id,
         resume_id=profile.resume_id,
         name=profile.name,
         gender=profile.gender,
@@ -78,7 +77,7 @@ def profile_to_data(profile: ResumeProfile) -> ResumeProfileData:
         education_experiences=[
             {
                 "education_id": e.education_id,
-                "profile_id": e.profile_id,
+                "resume_id": e.resume_id,
                 "school": e.school,
                 "major": e.major,
                 "education_level": e.education_level,
@@ -91,7 +90,7 @@ def profile_to_data(profile: ResumeProfile) -> ResumeProfileData:
         work_experiences=[
             {
                 "work_id": w.work_id,
-                "profile_id": w.profile_id,
+                "resume_id": w.resume_id,
                 "company": w.company,
                 "position": w.position,
                 "start_date": w.start_date,
@@ -104,7 +103,7 @@ def profile_to_data(profile: ResumeProfile) -> ResumeProfileData:
         project_experiences=[
             {
                 "project_id": p.project_id,
-                "profile_id": p.profile_id,
+                "resume_id": p.resume_id,
                 "project_name": p.project_name,
                 "role": p.role,
                 "start_date": p.start_date,
@@ -250,10 +249,10 @@ def update_profile(resume_id: int, req: ProfileUpdateRequest, db: Session = Depe
     profile.graduation_institution = req.graduation_institution
     profile.total_work_months = req.total_work_months
     # 技能全量替换
-    db.query(ProfileSkill).filter(ProfileSkill.profile_id == profile.profile_id).delete()
+    db.query(ProfileSkill).filter(ProfileSkill.resume_id == profile.resume_id).delete()
     for s in req.skills:
         if s.strip():
-            db.add(ProfileSkill(profile_id=profile.profile_id, skill_name=s.strip()))
+            db.add(ProfileSkill(resume_id=profile.resume_id, skill_name=s.strip()))
     # 待补录态且已补全 -> 进入待审核
     if resume.status == upload_service.STATUS_PENDING_COMPLETION and req.phone and req.email:
         resume.status = upload_service.STATUS_SCREEN_PASSED

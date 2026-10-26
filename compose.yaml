@@ -34,7 +34,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # 主服务：业务主线 + 前端；经 HTTP 调用解析服务
+  # 主服务：业务主线纯 API；前端独立部署（web 服务）
   app:
     build:
       context: .
@@ -46,13 +46,16 @@ services:
       PARSER_SERVICE_BASE_URL: http://parser:8002
       KNOWLEDGE_SERVICE_BASE_URL: http://knowledge:8001
       DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      # 容器内无 .env，须显式传入归一化/Agent 模型端点，否则回退官方地址
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      LLM_MODEL: ${LLM_MODEL:-qwen-plus}
     volumes:
       # 上传的简历文件保存在宿主机 ./data 目录
       - ./data:/app/data
     ports:
       - "127.0.0.1:18085:8000"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/resumes/stats', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/auth/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -64,6 +67,25 @@ services:
       parser:
         condition: service_started
       knowledge:
+        condition: service_started
+
+  # 前端：独立 nginx 容器托管 Vue 产物，/api 反代 app（前后端分离）
+  web:
+    build:
+      context: services/app/web
+      dockerfile: Dockerfile
+    container_name: smartresume-web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5173:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      app:
         condition: service_started
 
   # 解析服务：PDF -> 文本（PyMuPDF/pdfplumber/OCR 三级兜底）
