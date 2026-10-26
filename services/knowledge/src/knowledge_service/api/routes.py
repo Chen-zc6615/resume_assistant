@@ -3,7 +3,6 @@ from __future__ import annotations
 from fastapi import APIRouter, Request, Response, status
 
 from knowledge_service.models.schemas import (
-    ChatResponse,
     DocumentUpsert,
     DocumentWriteResponse,
     SearchRequest,
@@ -53,9 +52,4 @@ def delete_document(talent_card_id: str, request: Request) -> Response:
 @router.post("/api/v1/search", response_model=SearchResponse)
 def search(body: SearchRequest, request: Request) -> SearchResponse:
     return service_from(request).search(body)
-
-
-@router.post("/api/v1/chat", response_model=ChatResponse)
-def chat(body: SearchRequest, request: Request) -> ChatResponse:
-    return service_from(request).chat(body)
 

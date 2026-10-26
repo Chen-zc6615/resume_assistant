@@ -114,51 +114,37 @@ class KnowledgeEvaluator:
         )
 
     def evaluate_case(self, case: GoldenCase) -> CaseEvaluation:
-        evaluation_top_k = max(3, len(case.reference_chunk_ids))
-        response, diagnostics = self.service.chat_with_diagnostics(
-            SearchRequest(
-                query=case.query,
-                metadata_filter=case.metadata_filter,
-                top_k=evaluation_top_k,
-            )
-        )
+        outcome = self.service.search_with_diagnostics(SearchRequest(query=case.query))
+        diagnostics = outcome.diagnostics
 
         bm25_ids = self._aliases(diagnostics.bm25_chunk_ids)
         dense_ids = self._aliases(diagnostics.dense_chunk_ids)
         rrf_ids = self._aliases(diagnostics.rrf_chunk_ids)
         reranked_ids = self._aliases(diagnostics.reranked_chunk_ids)
-        retrieved_ids = reranked_ids[:evaluation_top_k]
+        retrieved_ids = self._aliases([result.chunk_id for result in outcome.results])
 
         rank_before = _first_reference_rank(rrf_ids, case.reference_chunk_ids)
         rank_after = _first_reference_rank(reranked_ids, case.reference_chunk_ids)
         all_references_hit = bool(case.reference_chunk_ids) and all(
             chunk_id in retrieved_ids for chunk_id in case.reference_chunk_ids
         )
+        evidence = "\n\n".join(result.content for result in outcome.results)
         keyword_hit = all(
-            keyword.lower() in response.answer.lower() for keyword in case.expected_keywords
+            keyword.lower() in evidence.lower() for keyword in case.expected_keywords
+        )
+        is_refused = (
+            not outcome.results
+            or outcome.results[0].rerank_score
+            < self.service.settings.knowledge_refusal_threshold
         )
 
-        metadata_filter_compliant: bool | None = None
-        metadata_filter_recall_passed: bool | None = None
-        if case.metadata_filter is not None:
-            metadata_filter_compliant = all(
-                all(
-                    self.chunk_metadata.get(chunk_id, {}).get(key) == value
-                    for key, value in case.metadata_filter.items()
-                )
-                for chunk_id in retrieved_ids
-            )
-            metadata_filter_recall_passed = all(
-                chunk_id in retrieved_ids for chunk_id in case.reference_chunk_ids
-            )
-
         if case.is_adversarial:
-            passed = response.is_refused
+            passed = is_refused
         else:
             retrieval_passed = (
                 all_references_hit if case.is_cross_doc else rank_after is not None
             )
-            passed = not response.is_refused and retrieval_passed and keyword_hit
+            passed = not is_refused and retrieval_passed and keyword_hit
 
         return CaseEvaluation(
             id=case.id,
@@ -167,7 +153,7 @@ class KnowledgeEvaluator:
             ground_truth_answer=case.ground_truth_answer,
             expected_keywords=case.expected_keywords,
             passed=passed,
-            is_refused=response.is_refused,
+            is_refused=is_refused,
             retrieved_chunk_ids=retrieved_ids,
             reference_chunk_ids=case.reference_chunk_ids,
             bm25_recall_count=len(bm25_ids),
@@ -185,12 +171,10 @@ class KnowledgeEvaluator:
                 if rank_before is not None and rank_after is not None
                 else None
             ),
-            metadata_filter_compliant=metadata_filter_compliant,
-            metadata_filter_recall_passed=metadata_filter_recall_passed,
-            citation_count=len(response.citations),
+            citation_count=len(outcome.results),
             top_score=(diagnostics.reranked_scores[0] if diagnostics.reranked_scores else None),
-            latency_ms=response.latency_ms,
-            answer=response.answer,
+            latency_ms=outcome.latency_ms,
+            answer=evidence,
             judge=None,
         )
 
@@ -201,9 +185,6 @@ class KnowledgeEvaluator:
         positive = [result for case, result in paired if not case.is_adversarial]
         adversarial = [result for case, result in paired if case.is_adversarial]
         cross_doc = [result for case, result in paired if case.is_cross_doc]
-        filtered = [
-            result for case, result in paired if case.metadata_filter is not None
-        ]
         judged = [result.judge for result in results if result.judge is not None]
         rank_changes = [
             float(result.rerank_rank_change)
@@ -255,14 +236,6 @@ class KnowledgeEvaluator:
                 sum(change > 0 for change in rank_changes), len(rank_changes)
             ),
             average_rerank_rank_change=_optional_average(rank_changes),
-            metadata_filter_compliance_rate=_rate(
-                sum(result.metadata_filter_compliant is True for result in filtered),
-                len(filtered),
-            ),
-            metadata_filter_recall_rate=_rate(
-                sum(result.metadata_filter_recall_passed is True for result in filtered),
-                len(filtered),
-            ),
             average_judge_correctness=_optional_average(
                 [judge.correctness_score for judge in judged]
             ),

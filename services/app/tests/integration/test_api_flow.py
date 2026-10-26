@@ -9,8 +9,7 @@ import json
 from pathlib import Path
 
 import pytest
-from app_service.clients import parser_client
-from app_service.services import llm
+from app_service.clients import model_client, parser_client
 from fastapi.testclient import TestClient
 
 from tests.conftest import golden
@@ -53,7 +52,9 @@ MOCK_EXTRACT = {
 def mock_llm(monkeypatch):
     """打桩归一化 LLM 与解析 HTTP 客户端（测试不依赖真实模型/解析服务）。"""
     monkeypatch.setattr(
-        llm, "chat_json", lambda sys, user: json.dumps(MOCK_EXTRACT, ensure_ascii=False)
+        model_client,
+        "extract_json",
+        lambda sys, user: json.dumps(MOCK_EXTRACT, ensure_ascii=False),
     )
     # 解析已迁为独立服务：打桩 HTTP 客户端返回固定文本，验证编排与状态机
     monkeypatch.setattr(

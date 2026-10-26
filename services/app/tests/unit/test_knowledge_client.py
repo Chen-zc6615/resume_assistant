@@ -40,6 +40,12 @@ class _FakeClient:
             raise self._raise_error
         return self._responses.pop(0)
 
+    def post(self, url: str, json: dict):
+        self.calls.append(("POST", url, json))
+        if self._raise_error is not None:
+            raise self._raise_error
+        return self._responses.pop(0)
+
 
 @pytest.fixture(autouse=True)
 def _no_sleep(monkeypatch):
@@ -149,3 +155,40 @@ def test_rejects_empty_input_before_http(monkeypatch):
         )
 
     assert fake.calls == []
+
+
+def test_search_sends_only_query_and_parses_results(monkeypatch):
+    fake = _FakeClient(
+        [
+            _FakeResponse(
+                200,
+                {
+                    "query": "Python 候选人",
+                    "results": [
+                        {
+                            "chunk_id": "talent-1:abc",
+                            "document_id": "talent-1",
+                            "document_type": "talent_profile",
+                            "content": "熟悉 Python 和 FastAPI",
+                            "metadata": {"source_resume_id": 1},
+                            "rerank_score": 0.91,
+                        }
+                    ],
+                    "latency_ms": 12.5,
+                },
+            )
+        ]
+    )
+    _patch_client(monkeypatch, fake)
+
+    result = knowledge_client.search("  Python 候选人  ")
+
+    assert fake.calls == [
+        (
+            "POST",
+            "http://127.0.0.1:8001/api/v1/search",
+            {"query": "Python 候选人"},
+        )
+    ]
+    assert result.results[0].document_id == "talent-1"
+    assert result.results[0].rerank_score == 0.91

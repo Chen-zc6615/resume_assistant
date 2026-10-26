@@ -90,14 +90,6 @@ def render_markdown(run: EvaluationRun) -> str:
             f"| RRF平均候选数 | {summary.average_rrf_candidate_count:.2f} |",
             f"| Rerank排名提升率 | {_percentage(summary.rerank_improvement_rate)} |",
             f"| Rerank平均排名变化 | {_number(summary.average_rerank_rank_change, 2)} |",
-            (
-                "| 元数据过滤条件遵守率 | "
-                f"{_percentage(summary.metadata_filter_compliance_rate)} |"
-            ),
-            (
-                "| 元数据过滤答案保留率 | "
-                f"{_percentage(summary.metadata_filter_recall_rate)} |"
-            ),
             "",
             "## LLM-as-Judge",
             "",
@@ -171,9 +163,6 @@ def render_markdown(run: EvaluationRun) -> str:
         gap_count += 1
     if summary.judge_pass_rate is None:
         lines.append("- LLM-as-Judge尚未执行，相关指标显示为N/A。")
-        gap_count += 1
-    if summary.metadata_filter_compliance_rate is None:
-        lines.append("- 黄金集中没有元数据过滤用例，相关指标显示为N/A。")
         gap_count += 1
     if gap_count == 0:
         lines.append("- 无。")

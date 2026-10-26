@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from app_service.models.db_models import ResumeProfile
 from app_service.models.schemas import FilterRule
 from app_service.services.screen_service import _skill_matches, evaluate_profile

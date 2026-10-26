@@ -1,6 +1,6 @@
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 DocumentType = Literal["talent_profile", "job_doc", "policy", "other"]
 
@@ -89,10 +89,9 @@ class TalentProfileUpsert(BaseModel):
 
 
 class SearchRequest(BaseModel):
-    query: str = Field(min_length=2)
-    document_types: list[DocumentType] | None = None
-    metadata_filter: dict[str, Any] | None = None
-    top_k: int | None = Field(default=None, ge=1, le=20)
+    model_config = ConfigDict(extra="forbid")
+
+    query: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 class SearchResult(BaseModel):
@@ -109,6 +108,7 @@ class SearchResponse(BaseModel):
     results: list[SearchResult]
     latency_ms: float
 
+<<<<<<< HEAD
 
 class Citation(BaseModel):
     chunk_id: str
@@ -125,3 +125,5 @@ class ChatResponse(BaseModel):
     citations: list[Citation] = Field(default_factory=list)
     latency_ms: float
 
+=======
+>>>>>>> origin/develop

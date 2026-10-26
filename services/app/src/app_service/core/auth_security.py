@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import secrets
+
 import bcrypt
 
 BCRYPT_ROUNDS = 12
@@ -14,7 +15,7 @@ def normalize_username(username: str) -> str:
 def _encode_password(password: str) -> bytes:
     if not password:
         raise ValueError("密码不能为空")
-    
+
     encoded = password.encode("utf-8")
 
     if len(encoded) > BCRYPT_MAX_PASSWORD_BYTES:

@@ -7,10 +7,10 @@ from typing import Any
 import jieba
 from rank_bm25 import BM25Okapi
 
+from knowledge_service.clients.embedding_client import EmbeddingClient
+from knowledge_service.clients.reranker_client import RerankerClient
 from knowledge_service.core.config import Settings
 from knowledge_service.models.schemas import SearchResult
-from knowledge_service.services.embedding import EmbeddingClient
-from knowledge_service.services.reranker import RerankerClient
 from knowledge_service.services.vector_store import VectorStore
 
 
@@ -38,32 +38,6 @@ def tokenize(text: str) -> list[str]:
     return [token.strip().lower() for token in jieba.cut(text) if token.strip()]
 
 
-def build_where(
-    document_types: list[str] | None,
-    metadata_filter: dict[str, Any] | None,
-) -> dict[str, Any] | None:
-    conditions: list[dict[str, Any]] = []
-    if document_types:
-        conditions.append({"document_type": {"$in": document_types}})
-    for key, value in (metadata_filter or {}).items():
-        conditions.append({key: value})
-    if not conditions:
-        return None
-    if len(conditions) == 1:
-        return conditions[0]
-    return {"$and": conditions}
-
-
-def metadata_matches(
-    metadata: dict[str, Any],
-    document_types: list[str] | None,
-    metadata_filter: dict[str, Any] | None,
-) -> bool:
-    if document_types and metadata.get("document_type") not in document_types:
-        return False
-    return all(metadata.get(key) == value for key, value in (metadata_filter or {}).items())
-
-
 class HybridRetriever:
     def __init__(
         self,
@@ -80,35 +54,20 @@ class HybridRetriever:
     def search(
         self,
         query: str,
-        document_types: list[str] | None = None,
-        metadata_filter: dict[str, Any] | None = None,
-        top_k: int | None = None,
     ) -> tuple[list[SearchResult], float]:
         """执行线上检索，保持原有返回契约不变。"""
-        outcome = self.search_with_diagnostics(
-            query=query,
-            document_types=document_types,
-            metadata_filter=metadata_filter,
-            top_k=top_k,
-        )
+        outcome = self.search_with_diagnostics(query=query)
         return outcome.results, outcome.latency_ms
 
     def search_with_diagnostics(
         self,
         query: str,
-        document_types: list[str] | None = None,
-        metadata_filter: dict[str, Any] | None = None,
-        top_k: int | None = None,
     ) -> RetrievalOutcome:
         """执行检索并返回 BM25、Dense、RRF 与 Rerank 的完整排序轨迹。"""
         started = time.perf_counter()
-        final_top_k = top_k or self.settings.knowledge_final_top_k
+        final_top_k = self.settings.knowledge_final_top_k
         rough_top_k = max(self.settings.knowledge_rough_top_k, final_top_k)
-        all_chunks = [
-            chunk
-            for chunk in self.store.all_chunks()
-            if metadata_matches(chunk["metadata"], document_types, metadata_filter)
-        ]
+        all_chunks = self.store.all_chunks()
         if not all_chunks:
             return RetrievalOutcome(
                 results=[],
@@ -129,10 +88,7 @@ class HybridRetriever:
             range(len(all_chunks)), key=lambda index: bm25_scores[index], reverse=True
         )[:rough_top_k]
 
-        where = build_where(document_types, metadata_filter)
-        dense = self.store.dense_search(
-            self.embeddings.embed_query(query), rough_top_k, where
-        )
+        dense = self.store.dense_search(self.embeddings.embed_query(query), rough_top_k)
 
         candidates: dict[str, dict[str, Any]] = {}
         rrf_scores: dict[str, float] = {}

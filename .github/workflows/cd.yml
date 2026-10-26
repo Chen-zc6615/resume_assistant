@@ -100,7 +100,7 @@ jobs:
     name: Deploy production
     needs: publish
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     environment:
       name: production
     permissions:
@@ -146,9 +146,32 @@ jobs:
             umask 077
 
             printf 'IMAGE_TAG=%s\n' "$DEPLOY_IMAGE_TAG" > .deploy.next.env
+            trap 'rm -f .deploy.next.env' EXIT
 
             compose=(docker compose --env-file .env --env-file .deploy.next.env -f compose.prod.yml)
-            "${compose[@]}" pull
+
+            pull_with_retry() {
+              local service="$1"
+              local max_attempts=4
+              local attempt=1
+
+              while true; do
+                echo "Pulling ${service} image (attempt ${attempt}/${max_attempts})"
+                if "${compose[@]}" pull "$service"; then
+                  return 0
+                fi
+                if (( attempt >= max_attempts )); then
+                  echo "Failed to pull ${service} image after ${max_attempts} attempts" >&2
+                  return 1
+                fi
+                sleep "$((attempt * 15))"
+                ((attempt += 1))
+              done
+            }
+
+            for service in db app parser knowledge; do
+              pull_with_retry "$service"
+            done
             "${compose[@]}" up -d db
 
             mkdir -p backups

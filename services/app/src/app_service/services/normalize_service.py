@@ -15,6 +15,7 @@ from datetime import datetime
 from jsonschema import ValidationError, validate
 from sqlalchemy.orm import Session
 
+from app_service.clients import model_client
 from app_service.core.config import get_settings
 from app_service.core.logger import get_logger
 from app_service.models.db_models import (
@@ -26,7 +27,6 @@ from app_service.models.db_models import (
     WorkExperience,
 )
 from app_service.models.schemas import ResumeProfileData
-from app_service.services import llm
 from app_service.services.skill_dict import canonical_skills
 
 logger = get_logger(__name__)
@@ -241,7 +241,7 @@ def llm_extract(raw_text: str) -> dict:
     last_error: Exception | None = None
     for attempt in range(1, settings.max_llm_retries + 2):  # 首次 + 2 次重试
         try:
-            content = llm.chat_json(EXTRACT_SYSTEM_PROMPT, text)
+            content = model_client.extract_json(EXTRACT_SYSTEM_PROMPT, text)
             data = json.loads(content)
             validate(instance=data, schema=RESUME_EXTRACT_SCHEMA)
             return data

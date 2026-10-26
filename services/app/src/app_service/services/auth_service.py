@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app_service.core.config import get_settings
+
 from app_service.core.auth_security import (
     generate_token,
     hash_password,
@@ -11,7 +12,7 @@ from app_service.core.auth_security import (
     verify_password,
     verify_token,
 )
-
+from app_service.core.config import get_settings
 from app_service.models.db_models import AuthSession, UserAccount
 
 MAX_FAILED_LOGIN_ATTEMPTS = 5

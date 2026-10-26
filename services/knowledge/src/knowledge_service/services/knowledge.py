@@ -3,21 +3,18 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from knowledge_service.clients.embedding_client import EmbeddingClient
+from knowledge_service.clients.reranker_client import RerankerClient
 from knowledge_service.core.config import Settings
 from knowledge_service.models.schemas import (
-    ChatResponse,
-    Citation,
     DocumentUpsert,
     DocumentWriteResponse,
     SearchRequest,
     SearchResponse,
-    SearchResult,
     TalentProfileUpsert,
 )
 from knowledge_service.services.chunker import MarkdownChunker
-from knowledge_service.services.embedding import EmbeddingClient
-from knowledge_service.services.reranker import RerankerClient
-from knowledge_service.services.retriever import HybridRetriever, RetrievalDiagnostics
+from knowledge_service.services.retriever import HybridRetriever, RetrievalOutcome
 from knowledge_service.services.vector_store import VectorStore
 from knowledge_service.services.wiki_card import (
     WikiCard,
@@ -134,14 +131,10 @@ class KnowledgeService:
                 pass
 
     def search(self, request: SearchRequest) -> SearchResponse:
-        results, latency = self.retriever.search(
-            query=request.query,
-            document_types=request.document_types,
-            metadata_filter=request.metadata_filter,
-            top_k=request.top_k,
-        )
+        results, latency = self.retriever.search(query=request.query)
         return SearchResponse(query=request.query, results=results, latency_ms=latency)
 
+<<<<<<< HEAD
     def chat(self, request: SearchRequest) -> ChatResponse:
         response, _ = self.chat_with_diagnostics(request)
         return response
@@ -200,3 +193,8 @@ class KnowledgeService:
             citations=citations,
             latency_ms=latency_ms,
         )
+=======
+    def search_with_diagnostics(self, request: SearchRequest) -> RetrievalOutcome:
+        """供离线评估使用；线上接口只返回标准检索响应。"""
+        return self.retriever.search_with_diagnostics(query=request.query)
+>>>>>>> origin/develop
