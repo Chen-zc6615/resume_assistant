@@ -158,7 +158,7 @@ class HybridRetriever:
         results = [
             SearchResult(
                 chunk_id=chunk["chunk_id"],
-                document_id=str(chunk["metadata"]["document_id"]),
+                talent_card_id=str(chunk["metadata"]["talent_card_id"]),
                 document_type=str(chunk["metadata"]["document_type"]),
                 content=chunk["content"],
                 metadata=chunk["metadata"],

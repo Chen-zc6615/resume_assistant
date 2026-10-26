@@ -51,11 +51,11 @@ def _patch_client(monkeypatch, fake: _FakeClient) -> None:
 
 
 def test_upsert_document_sends_expected_contract(monkeypatch):
-    fake = _FakeClient([_FakeResponse(200, {"document_id": "talent-23", "chunk_count": 4})])
+    fake = _FakeClient([_FakeResponse(200, {"talent_card_id": "talent-23", "chunk_count": 4})])
     _patch_client(monkeypatch, fake)
 
     result = knowledge_client.upsert_document(
-        document_id="talent-23",
+        talent_card_id="talent-23",
         document_type="talent_profile",
         content="# 候选人知识卡片：张三",
         metadata={"source_resume_id": 11},
@@ -64,7 +64,7 @@ def test_upsert_document_sends_expected_contract(monkeypatch):
     assert result == knowledge_client.DocumentWriteResult("talent-23", 4)
     method, url, body = fake.calls[0]
     assert method == "PUT"
-    assert url.endswith("/api/v1/documents/talent-23")
+    assert url.endswith("/api/v1/talent-cards/talent-23")
     assert body == {
         "document_type": "talent_profile",
         "content": "# 候选人知识卡片：张三",
@@ -76,13 +76,13 @@ def test_upsert_retries_server_error_then_succeeds(monkeypatch):
     fake = _FakeClient(
         [
             _FakeResponse(503, {"detail": "embedding unavailable"}),
-            _FakeResponse(200, {"document_id": "talent-1", "chunk_count": 2}),
+            _FakeResponse(200, {"talent_card_id": "talent-1", "chunk_count": 2}),
         ]
     )
     _patch_client(monkeypatch, fake)
 
     result = knowledge_client.upsert_document(
-        document_id="talent-1",
+        talent_card_id="talent-1",
         document_type="talent_profile",
         content="# 卡片",
     )
@@ -97,7 +97,7 @@ def test_upsert_does_not_retry_invalid_document(monkeypatch):
 
     with pytest.raises(knowledge_client.KnowledgeServiceError, match="content 不能为空"):
         knowledge_client.upsert_document(
-            document_id="talent-1",
+            talent_card_id="talent-1",
             document_type="talent_profile",
             content="# 卡片",
         )
@@ -111,7 +111,7 @@ def test_connection_error_retries_then_reports_unavailable(monkeypatch):
 
     with pytest.raises(knowledge_client.KnowledgeServiceError, match="知识库服务不可用"):
         knowledge_client.upsert_document(
-            document_id="talent-1",
+            talent_card_id="talent-1",
             document_type="talent_profile",
             content="# 卡片",
         )
@@ -129,7 +129,7 @@ def test_delete_is_idempotent(monkeypatch, status_code):
     assert fake.calls == [
         (
             "DELETE",
-            "http://127.0.0.1:8001/api/v1/documents/talent-23",
+            "http://127.0.0.1:8001/api/v1/talent-cards/talent-23",
             None,
         )
     ]
@@ -139,11 +139,11 @@ def test_rejects_empty_input_before_http(monkeypatch):
     fake = _FakeClient([])
     _patch_client(monkeypatch, fake)
 
-    with pytest.raises(ValueError, match="document_id"):
+    with pytest.raises(ValueError, match="talent_card_id"):
         knowledge_client.delete_document("  ")
     with pytest.raises(ValueError, match="content"):
         knowledge_client.upsert_document(
-            document_id="talent-1",
+            talent_card_id="talent-1",
             document_type="talent_profile",
             content="  ",
         )

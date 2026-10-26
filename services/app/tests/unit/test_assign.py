@@ -70,7 +70,7 @@ def _mk_resume(db, seq: int, skills: list[str]) -> Resume:
     db.add(profile)
     db.flush()
     for s in skills:
-        db.add(ProfileSkill(profile_id=profile.profile_id, skill_name=s))
+        db.add(ProfileSkill(resume_id=profile.resume_id, skill_name=s))
     db.commit()
     return resume
 

@@ -255,9 +255,8 @@ class Resume(Base, TimestampMixin):
 class ResumeProfile(Base, TimestampMixin):
     __tablename__ = "resume_profiles"
 
-    profile_id: Mapped[int] = mapped_column(IntPK, primary_key=True, autoincrement=True)
     resume_id: Mapped[int] = mapped_column(
-        ForeignKey("resumes.resume_id"), unique=True, nullable=False
+        ForeignKey("resumes.resume_id"), primary_key=True
     )
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     # 0-男 1-女，NULL=未知（简历未写不编造）
@@ -288,8 +287,8 @@ class ProfileSkill(Base):
     __tablename__ = "profile_skills"
 
     id: Mapped[int] = mapped_column(IntPK, primary_key=True, autoincrement=True)
-    profile_id: Mapped[int] = mapped_column(
-        ForeignKey("resume_profiles.profile_id"), nullable=False
+    resume_id: Mapped[int] = mapped_column(
+        ForeignKey("resume_profiles.resume_id"), nullable=False
     )
     skill_name: Mapped[str] = mapped_column(String(80), nullable=False)
 
@@ -300,8 +299,8 @@ class EducationExperience(Base):
     __tablename__ = "education_experiences"
 
     education_id: Mapped[int] = mapped_column(IntPK, primary_key=True, autoincrement=True)
-    profile_id: Mapped[int] = mapped_column(
-        ForeignKey("resume_profiles.profile_id"), nullable=False
+    resume_id: Mapped[int] = mapped_column(
+        ForeignKey("resume_profiles.resume_id"), nullable=False
     )
     school: Mapped[str] = mapped_column(String(100), nullable=False)
     major: Mapped[str | None] = mapped_column(String(100))
@@ -318,8 +317,8 @@ class WorkExperience(Base):
     __tablename__ = "work_experiences"
 
     work_id: Mapped[int] = mapped_column(IntPK, primary_key=True, autoincrement=True)
-    profile_id: Mapped[int] = mapped_column(
-        ForeignKey("resume_profiles.profile_id"), nullable=False
+    resume_id: Mapped[int] = mapped_column(
+        ForeignKey("resume_profiles.resume_id"), nullable=False
     )
     company: Mapped[str] = mapped_column(String(150), nullable=False)
     position: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -335,8 +334,8 @@ class ProjectExperience(Base):
     __tablename__ = "project_experiences"
 
     project_id: Mapped[int] = mapped_column(IntPK, primary_key=True, autoincrement=True)
-    profile_id: Mapped[int] = mapped_column(
-        ForeignKey("resume_profiles.profile_id"), nullable=False
+    resume_id: Mapped[int] = mapped_column(
+        ForeignKey("resume_profiles.resume_id"), nullable=False
     )
     project_name: Mapped[str] = mapped_column(String(200), nullable=False)
     role: Mapped[str | None] = mapped_column(String(100))
@@ -420,7 +419,7 @@ class TalentPool(Base, TimestampMixin):
     knowledge_sync_status: Mapped[str] = mapped_column(
         String(20), default="pending", server_default="pending", nullable=False
     )
-    knowledge_document_id: Mapped[str | None] = mapped_column(String(100))
+    knowledge_talent_card_id: Mapped[str | None] = mapped_column(String(100))
     knowledge_chunk_count: Mapped[int | None] = mapped_column(Integer)
     knowledge_sync_error: Mapped[str | None] = mapped_column(String(500))
     knowledge_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -428,6 +427,79 @@ class TalentPool(Base, TimestampMixin):
     resume: Mapped["Resume"] = relationship()
     source_requirement: Mapped["Requirement | None"] = relationship()
     source_job: Mapped["Job | None"] = relationship()
+
+
+# ------------------------- Agent 任务域 -------------------------
+
+
+class AgentTask(Base, TimestampMixin):
+    """类似 ChatGPT 会话的持久化任务；一个任务包含多条消息和待审批动作。"""
+
+    __tablename__ = "agent_tasks"
+    __table_args__ = (
+        CheckConstraint("status IN ('active', 'archived')", name="ck_agent_tasks_status"),
+    )
+
+    task_id: Mapped[int] = mapped_column(IntPK, primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String(120), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
+    created_by: Mapped[str] = mapped_column(String(50), nullable=False)
+
+    messages: Mapped[list["AgentMessage"]] = relationship(
+        back_populates="task", cascade="all, delete-orphan", order_by="AgentMessage.message_id"
+    )
+    actions: Mapped[list["AgentAction"]] = relationship(
+        back_populates="task", cascade="all, delete-orphan", order_by="AgentAction.action_id"
+    )
+
+
+class AgentMessage(Base):
+    __tablename__ = "agent_messages"
+    __table_args__ = (
+        CheckConstraint("role IN ('user', 'assistant')", name="ck_agent_messages_role"),
+    )
+
+    message_id: Mapped[int] = mapped_column(IntPK, primary_key=True, autoincrement=True)
+    task_id: Mapped[int] = mapped_column(
+        ForeignKey("agent_tasks.task_id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    role: Mapped[str] = mapped_column(String(20), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    tool_traces: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    intent: Mapped[str | None] = mapped_column(String(50))
+    trace_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    metrics: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.current_timestamp(), nullable=False
+    )
+
+    task: Mapped["AgentTask"] = relationship(back_populates="messages")
+
+
+class AgentAction(Base, TimestampMixin):
+    """Agent 只能提出动作；必须由 HR 对具体 action_id 作出决定。"""
+
+    __tablename__ = "agent_actions"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'approved', 'rejected', 'executed', 'failed')",
+            name="ck_agent_actions_status",
+        ),
+    )
+
+    action_id: Mapped[int] = mapped_column(IntPK, primary_key=True, autoincrement=True)
+    task_id: Mapped[int] = mapped_column(
+        ForeignKey("agent_tasks.task_id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    action_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    result: Mapped[dict | None] = mapped_column(JSON)
+    decision_reason: Mapped[str | None] = mapped_column(Text)
+    decided_by: Mapped[str | None] = mapped_column(String(50))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    task: Mapped["AgentTask"] = relationship(back_populates="actions")
 
 
 # ------------------------- 初筛域（架构图：模板/任务/结果） -------------------------
@@ -480,9 +552,6 @@ class FilterResult(Base):
     run_id: Mapped[int] = mapped_column(ForeignKey("filter_runs.run_id"), nullable=False)
     resume_id: Mapped[int] = mapped_column(
         ForeignKey("resumes.resume_id"), nullable=False
-    )
-    profile_id: Mapped[int | None] = mapped_column(
-        ForeignKey("resume_profiles.profile_id")
     )
     # PASS / REJECT / PENDING_REVIEW
     result: Mapped[str] = mapped_column(String(20), nullable=False)

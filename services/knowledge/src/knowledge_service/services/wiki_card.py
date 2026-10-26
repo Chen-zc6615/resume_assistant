@@ -1,11 +1,26 @@
-"""把脱敏的归一化人才数据渲染为知识库 Wiki 卡片。"""
+"""把脱敏的归一化人才数据渲染为知识库 Wiki 卡片。
+
+entities/summary 由 LLM 生成（输出必须过 Pydantic 契约校验，连续
+失败降级为确定性拼接）；其余字段与正文全部来自传入的数据库事实。
+"""
 
 from __future__ import annotations
 
 import json
+import logging
 import re
 from dataclasses import dataclass
+from typing import Any
 
+import litellm
+from litellm import completion
+from litellm.types.utils import ModelResponse
+from pydantic import BaseModel, ConfigDict, Field
+
+from knowledge_service.core.config import get_settings
+
+# 屏蔽 litellm 异常时的调试信息横幅，避免污染服务日志
+litellm.suppress_debug_info = True
 from knowledge_service.models.schemas import (
     TalentEducation,
     TalentProfileUpsert,
@@ -13,17 +28,74 @@ from knowledge_service.models.schemas import (
     TalentWork,
 )
 
+logger = logging.getLogger(__name__)
+
+
+class CardContentGenerationError(RuntimeError):
+    """卡片展示字段（entities/summary）LLM 生成失败；同步应标记 failed 由人工重试。"""
+
+
+class _CardKeywords(BaseModel):
+    """LLM 卡片展示字段输出契约；校验失败即重试，连续失败阻断同步。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    entities: list[str] = Field(min_length=1, max_length=6)
+    summary: str = Field(min_length=1, max_length=200)
+
+
+_CARD_KEYWORDS_PROMPT = (
+    "你为候选人知识卡片提炼两个展示字段。只允许基于给定的归一化事实，"
+    "禁止编造或推测事实中不存在的信息，不出现电话、邮箱等联系方式。"
+    '仅返回 JSON 对象：{"entities": ["3~6 个核心关键词"],'
+    ' "summary": "100 字以内的一句话候选人画像"}'
+)
+
+
+def _generate_card_content(profile: TalentProfileUpsert) -> dict[str, Any]:
+    """LLM 生成卡片 entities/summary；输出必须过 Pydantic 校验，连续失败抛异常阻断本次同步。"""
+
+    settings = get_settings()
+    payload = json.dumps(
+        profile.model_dump(exclude_none=True, mode="json"), ensure_ascii=False
+    )
+    attempts = settings.card_llm_retries + 1
+    for _ in range(attempts):
+        try:
+            response = completion(
+                model=f"openai/{settings.card_llm_model}",
+                api_key=settings.model_api_key,
+                api_base=settings.model_base_url,
+                response_format={"type": "json_object"},
+                temperature=0.1,
+                timeout=settings.model_timeout_seconds,
+                messages=[
+                    {"role": "system", "content": _CARD_KEYWORDS_PROMPT},
+                    {"role": "user", "content": payload},
+                ],
+            )
+            # litellm 类型重载含流式/协程分支，同步调用显式收窄为 ModelResponse
+            if not isinstance(response, ModelResponse) or not response.choices:
+                raise ValueError("卡片展示字段模型返回格式异常")
+            content = response.choices[0].message.content
+            if not content:
+                raise ValueError("卡片展示字段模型返回空内容")
+            card = _CardKeywords.model_validate_json(content)
+            return {"entities": card.entities, "summary": card.summary}
+        except Exception:
+            logger.warning("卡片展示字段 LLM 生成失败，准备重试", exc_info=True)
+    raise CardContentGenerationError(
+        f"卡片展示字段 LLM 生成失败（已尝试 {attempts} 次），请稍后重试同步"
+    )
+
 
 @dataclass(frozen=True)
 class WikiCard:
-    document_id: str
     content: str
-    metadata: dict[str, str | int | list[str]]
+    metadata: dict[str, str | int | list[str] | None]
 
 
 def _inline(value: str) -> str:
-    """把来源文本限制在一行，避免其改变 Markdown 标题层级。"""
-
     return re.sub(r"\s+", " ", value).strip()
 
 
@@ -83,104 +155,53 @@ def _append_project(lines: list[str], item: TalentProject) -> None:
         lines.append(f"- 项目描述：{_inline(item.description)}")
 
 
-def _summary(profile: TalentProfileUpsert) -> str:
-    """从白名单字段确定性拼接一句话摘要（同输入永远同输出，不调用 LLM）。"""
+def build_talent_wiki_card(profile: TalentProfileUpsert) -> WikiCard:
+    """渲染人读的知识卡片；不接收电话、邮箱或简历原文。
 
-    parts: list[str] = []
-    if profile.highest_education or profile.graduation_institution:
-        edu = "、".join(x for x in (profile.highest_education, profile.graduation_institution) if x)
-        parts.append(f"{edu}背景")
-    if profile.total_work_months is not None:
-        parts.append(f"{_work_months_label(profile.total_work_months)}工作经验")
-    if profile.work_experiences:
-        latest = profile.work_experiences[0]
-        parts.append(f"现任/曾任 {_heading(latest.company, latest.position)}")
-    if profile.skills:
-        shown = "、".join(s.strip() for s in profile.skills[:6] if s.strip())
-        if len(profile.skills) > 6:
-            shown += " 等"
-        parts.append(f"核心技能：{shown}")
-    return "；".join(parts) + "。" if parts else "暂无可概述信息。"
-
-
-def _entities(profile: TalentProfileUpsert, skills: list[str]) -> list[str]:
-    """确定性提炼 3~6 个核心关键词（职位方向 + 技能 + 学历背景）。"""
-
-    entities: list[str] = []
-    if profile.work_experiences:
-        latest = profile.work_experiences[0]
-        if latest.position:
-            entities.append(_inline(latest.position))
-    entities.extend(skills[:3])
-    if profile.graduation_institution and len(entities) < 5:
-        entities.append(_inline(profile.graduation_institution))
-    if profile.highest_education and len(entities) < 5:
-        entities.append(_inline(profile.highest_education))
-    unique: list[str] = []
-    for entity in entities:
-        if entity not in unique:
-            unique.append(entity)
-    return unique[:6]
-
-
-def build_talent_wiki_card(document_id: str, profile: TalentProfileUpsert) -> WikiCard:
-    """确定性生成卡片；不调用 LLM，也不接收电话、邮箱或简历原文。
-
-    Frontmatter 字段对齐 Day11 企业 Wiki 卡片规范（id/title/category/
-    department/version/entities/summary）；effective_date 与 replaces 为
-    制度文档专属概念，人才卡片无对应事实，按「不编造」红线省略。
+    Frontmatter 仅含五个展示字段。entities/summary 由 LLM 生成（必须
+    过 Pydantic 契约校验，连续失败抛 CardContentGenerationError 阻断
+    同步，不做次品降级）；id/name/create_date 为传入的数据库事实。
+    检索层消费的系统键与过滤键由入库层（KnowledgeService）装配，
+    不在卡片上出现。
     """
 
-    if not re.fullmatch(r"talent-[1-9]\d*", document_id):
-        raise ValueError("人才卡片 document_id 必须为 talent-{正整数}")
-
-    title = f"候选人知识卡片：{_inline(profile.name)}"
+    title = _inline(profile.name)
     skills = [_inline(skill) for skill in profile.skills if skill.strip()]
-    metadata: dict[str, str | int | list[str]] = {
-        # ---- Day11 Wiki 卡片规范字段 ----
+    # create_date 为主服务传入的入库时间（数据库事实）；
+    # entities/summary 必须来自 LLM 并过校验，失败即抛错阻断同步。
+    create_date = profile.create_date
+    llm_content = _generate_card_content(profile)
+    entities = llm_content["entities"]
+    summary = llm_content["summary"]
+
+    metadata: dict[str, str | int | list[str] | None] = {
+        # ---- HR Wiki 卡片展示字段（必填；检索键由入库层装配）----
         "id": profile.source_resume_id,
-        "title": title,
-        "category": "人才库/候选人画像",
-        "department": "人力资源/招聘人才库",
-        "version": "v1.0",
-        "summary": _summary(profile),
-        # ---- 人才卡片专有字段（检索链路依赖，勿删） ----
-        "document_id": document_id,
-        "document_type": "talent_profile",
-        "source_resume_id": profile.source_resume_id,
+        "name": title,
+        "create_date": create_date,
+        "entities": entities,
+        "summary": summary,
     }
-    entities = _entities(profile, skills)
-    if entities:
-        metadata["entities"] = entities
-    if profile.source_profile_id is not None:
-        metadata["source_profile_id"] = profile.source_profile_id
-    gender = {0: "男", 1: "女"}.get(profile.gender)
-    if gender:
-        metadata["gender"] = gender
-    if profile.highest_education:
-        metadata["highest_education"] = _inline(profile.highest_education)
-    if profile.graduation_institution:
-        metadata["graduation_institution"] = _inline(profile.graduation_institution)
-    if profile.total_work_months is not None:
-        metadata["total_work_months"] = profile.total_work_months
-        metadata["total_work_years"] = _work_months_label(profile.total_work_months)
-    if skills:
-        metadata["skills"] = skills
-        metadata["skill_count"] = len(skills)
 
     frontmatter = ["---"]
     for key, value in metadata.items():
-        if isinstance(value, str):
-            encoded = json.dumps(value, ensure_ascii=False)
+        if isinstance(value, list) and value:
+            frontmatter.append(f"{key}:")
+            frontmatter.extend(
+                f"  - {json.dumps(item, ensure_ascii=False)}" for item in value
+            )
         elif isinstance(value, list):
-            encoded = json.dumps(value, ensure_ascii=False)
+            frontmatter.append(f"{key}: []")
+        elif value is None:
+            frontmatter.append(f"{key}: null")
+        elif isinstance(value, str):
+            frontmatter.append(f"{key}: {json.dumps(value, ensure_ascii=False)}")
         else:
-            encoded = str(value)
-        frontmatter.append(f"{key}: {encoded}")
+            frontmatter.append(f"{key}: {value}")
     frontmatter.extend(["---", ""])
 
     lines = [*frontmatter, f"# {title}", "", "## 基本信息", "", f"- 姓名：{_inline(profile.name)}"]
-    gender = {0: "男", 1: "女"}.get(profile.gender)
+    gender = None if profile.gender is None else {0: "男", 1: "女"}[profile.gender]
     if gender:
         lines.append(f"- 性别：{gender}")
     if profile.highest_education:
@@ -211,7 +232,6 @@ def build_talent_wiki_card(document_id: str, profile: TalentProfileUpsert) -> Wi
         lines.extend(f"- {skill}" for skill in skills)
 
     return WikiCard(
-        document_id=document_id,
         content="\n".join(lines).rstrip() + "\n",
         metadata=metadata,
     )

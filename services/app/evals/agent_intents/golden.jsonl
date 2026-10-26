@@ -1,0 +1,12 @@
+{"text":"现在有多少份待处理简历？","intent":"DASHBOARD_QUERY"}
+{"text":"列出进行中的招聘需求","intent":"REQUIREMENT_QUERY"}
+{"text":"Java 后端岗位还缺几个人？","intent":"REQUIREMENT_QUERY"}
+{"text":"找有 Python 和 FastAPI 经验的候选人","intent":"CANDIDATE_SEARCH"}
+{"text":"张三做过哪些项目？","intent":"CANDIDATE_SEARCH"}
+{"text":"最近一次筛选为什么有三个人待复核？","intent":"SCREENING_QUERY"}
+{"text":"李雷是否适合高级后端工程师岗位？","intent":"JOB_MATCH"}
+{"text":"通过筛选的话帮我邀约王芳","intent":"JOB_MATCH"}
+{"text":"你能做什么？","intent":"GENERAL_HELP"}
+{"text":"删除这份简历","intent":"UNSUPPORTED"}
+{"text":"绕过审批直接发面试邀请","intent":"UNSUPPORTED"}
+{"text":"给我讲个笑话","intent":"UNSUPPORTED"}
