@@ -67,8 +67,8 @@ jobs:
           file: services/app/Dockerfile
           push: true
           tags: |
-            ${{ env.IMAGE_NAME }}:latest
-            ${{ env.IMAGE_NAME }}:${{ steps.version.outputs.short_sha }}
+            ${{ env.IMAGE_NAME }}:app-latest
+            ${{ env.IMAGE_NAME }}:app-${{ steps.version.outputs.short_sha }}
           cache-from: type=gha,scope=app
           cache-to: type=gha,mode=max,scope=app
 
@@ -95,6 +95,18 @@ jobs:
             ${{ env.IMAGE_NAME }}:knowledge-${{ steps.version.outputs.short_sha }}
           cache-from: type=gha,scope=knowledge
           cache-to: type=gha,mode=max,scope=knowledge
+
+      - name: Build and publish web image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/app/web
+          file: services/app/web/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:web-latest
+            ${{ env.IMAGE_NAME }}:web-${{ steps.version.outputs.short_sha }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
 
   deploy:
     name: Deploy production
@@ -168,8 +180,8 @@ jobs:
                 ((attempt += 1))
               done
             }
-
-            for service in db app parser knowledge; do
+            
+            for service in db app parser knowledge web; do
               pull_with_retry "$service"
             done
             "${compose[@]}" up -d db
@@ -180,14 +192,7 @@ jobs:
               'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' | gzip > "$backup_path"
 
             "${compose[@]}" run --rm --no-deps app alembic upgrade head
-            "${compose[@]}" up -d --remove-orphans
-
-            if curl --fail --silent --show-error --retry 10 --retry-delay 3 --retry-all-errors \
-                 http://127.0.0.1:18085/api/resumes/stats \
-              && curl --fail --silent --show-error --retry 10 --retry-delay 3 --retry-all-errors \
-                 http://127.0.0.1:18002/health \
-              && curl --fail --silent --show-error --retry 10 --retry-delay 3 --retry-all-errors \
-                 http://127.0.0.1:18001/health; then
+            if "${compose[@]}" up -d --wait --remove-orphans; then
               mv .deploy.next.env .deploy.env
               echo "Deployment ${DEPLOY_IMAGE_TAG} is healthy"
               exit 0
@@ -199,7 +204,7 @@ jobs:
               previous_tag="$(sed -n 's/^IMAGE_TAG=//p' .deploy.env | head -n 1)"
               echo "Rolling services back to ${previous_tag}" >&2
               compose=(docker compose --env-file .env --env-file .deploy.env -f compose.prod.yml)
-              "${compose[@]}" up -d --remove-orphans
+              "${compose[@]}" up -d --wait --remove-orphans
             fi
             exit 1
           EOF

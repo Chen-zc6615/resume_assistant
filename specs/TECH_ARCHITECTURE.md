@@ -1,6 +1,6 @@
 # 《智能简历筛选助手 技术架构书》
 
-> 修订日期：2026\-10\-10。本书依据当前代码，说明系统的总体结构、技术选型与模块职责。
+> 修订日期：2026\-11\-03。本书依据当前代码，说明系统的总体结构、技术选型与模块职责。
 > 
 > 
 
@@ -14,7 +14,7 @@
 
 ## **1\.2 架构原则**
 
-- **轻量部署：**采用模块化单体架构。前端与后端分开开发，后端业务模块在同一应用中运行，适合当前单机、低并发的使用规模。
+- **轻量部署：**采用 uv workspace 三服务架构（主服务 + 解析 + 知识库），前端独立工程，通过 Docker Compose 编排。业务处理为单实例架构（后台任务与批次进度依赖主服务进程，多实例需先解决任务分发与进度共享）。
 
 - **职责分离：**接口层负责接收请求和组织响应；业务服务分别处理文件、解析、归一化、分配与筛选；模型与存储通过专门模块接入，避免页面承担业务决策。
 
@@ -89,26 +89,28 @@
 # **三、代码结构与工程组织**
 
 ```Plain Text
-smart-resume/
-├── src/
-│   ├── app.py                  # FastAPI 应用装配与路由注册
-│   ├── api/                    # 简历、需求、岗位、筛选和人才接口
-│   ├── services/               # 上传、解析、归一化、分配、初筛与编排
-│   ├── models/                 # SQLAlchemy 实体与 Pydantic 契约
-│   ├── db/                     # 数据库基础定义、引擎与会话
-│   ├── core/                   # 配置、文件安全与日志
-│   └── web/                    # Vue 前端独立工程
-│       └── src/
-│           ├── views/         # 业务页面
-│           ├── components/    # 通用显示与审核组件
-│           ├── api/           # Axios 请求封装
-│           └── router/        # 页面路由
-├── specs/                      # 业务、数据与验收规范
-├── tests/                      # 单元与集成测试
-├── evals/                      # 验收样本
-├── data/                       # 原始 PDF 等本地运行时文件目录
-├── pyproject.toml              # 后端依赖与工程配置
-└── README.md                   # 项目说明
+resume_assistant/               # uv workspace monorepo（根 pyproject 仅调度，package=false）
+├── services/
+│   ├── app/                    # 主服务 resume-app-service :8000
+│   │   ├── migrations/         # alembic 迁移链（0001→0005，由仓库根 alembic.ini 指向）
+│   │   ├── src/app_service/
+│   │   │   ├── app.py          # FastAPI 工厂与路由注册
+│   │   │   ├── api/            # 路由暴露层（auth/resumes/jobs/screening/talent/agent/tasks…）
+│   │   │   ├── services/       # 业务逻辑与状态机（upload/normalize/screen/pipeline/agent/task/auth…）
+│   │   │   ├── clients/        # 对 parser/knowledge/LLM 的 HTTP 客户端
+│   │   │   ├── models/         # ORM（20 张表）与 Pydantic 契约
+│   │   │   ├── core/           # 配置、安全、日志、鉴权中间件
+│   │   │   └── db/             # 引擎与会话
+│   │   ├── tests/              # 单测 + 全链路集成测试
+│   │   └── web/                # Vue3 前端独立 npm 工程（:5173，代理 /api）
+│   ├── parser/                 # resume-parser-service :8002（PDF→文本，无状态）
+│   └── knowledge/              # resume-knowledge-service :8001（混合检索+重排）
+├── packages/shared/            # resume_shared（PDF 校验等跨服务共享）
+├── specs/                      # PRD / TECH_ARCHITECTURE / DEPLOYMENT / api / function_specs
+├── evals/                      # 黄金样本与验收数据（24 份 PDF）
+├── data/                       # 运行时落盘（上传原件 + 人才 Wiki 卡片 md 副本）
+├── compose.yaml / compose.prod.yml / alembic.ini / uv.lock
+└── AGENTS.md / README.md
 ```
 
 > （注：部分内容由豆包工作 AI 生成）

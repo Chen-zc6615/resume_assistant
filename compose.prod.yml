@@ -3,8 +3,8 @@ services:
     image: ghcr.io/chen-zc6615/resume_assistant:postgres-17-alpine
     container_name: resume-assistant-db
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:15432:5432"
+
+    networks: [back]
 
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -24,9 +24,11 @@ services:
     mem_limit: 512m
 
   app:
-    image: ghcr.io/chen-zc6615/resume_assistant:${IMAGE_TAG:-latest}
-    container_name: resume-assistant
+    image: ghcr.io/chen-zc6615/resume_assistant:app-${IMAGE_TAG:-latest}
+    container_name: resume-assistant-app
     restart: unless-stopped
+
+    networks: [front, back]
 
     init: true
 
@@ -46,9 +48,6 @@ services:
       knowledge:
         condition: service_started
 
-    ports:
-      - "127.0.0.1:18085:8000"
-
     volumes:
       - ./data:/app/data
 
@@ -60,12 +59,24 @@ services:
         max-size: "10m"
         max-file: "3"
 
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/auth/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
   web:
-    build: ./services/app/web
+    image: ghcr.io/chen-zc6615/resume_assistant:web-${IMAGE_TAG:-latest}
     container_name: resume-assistant-web
     restart: unless-stopped
+
+    networks: [front]
+
     depends_on:
-      - app
+      app:
+        condition: service_healthy
+
     ports:
       - "127.0.0.1:18080:80"
     logging:
@@ -74,19 +85,25 @@ services:
         max-size: "10m"
         max-file: "3"
 
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
   parser:
     image: ghcr.io/chen-zc6615/resume_assistant:parser-${IMAGE_TAG:-latest}
     container_name: resume-assistant-parser
     restart: unless-stopped
+
+    networks: [back]
 
     init: true
 
     environment:
       MODEL_API_KEY: ${MODEL_API_KEY:-${DASHSCOPE_API_KEY:-}}
       MODEL_BASE_URL: ${MODEL_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
-
-    ports:
-      - "127.0.0.1:18002:8002"
 
     mem_limit: 1g
 
@@ -96,10 +113,19 @@ services:
         max-size: "10m"
         max-file: "3"
 
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8002/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
   knowledge:
     image: ghcr.io/chen-zc6615/resume_assistant:knowledge-${IMAGE_TAG:-latest}
     container_name: resume-assistant-knowledge
     restart: unless-stopped
+
+    networks: [back]
 
     init: true
 
@@ -109,9 +135,6 @@ services:
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-qwen3-embedding-8b}
       RERANK_MODEL: ${RERANK_MODEL:-qwen3-reranker-8b}
       KNOWLEDGE_DATA_DIR: /app/data
-
-    ports:
-      - "127.0.0.1:18001:8001"
 
     volumes:
       - knowledge_data:/app/data
@@ -124,6 +147,17 @@ services:
         max-size: "10m"
         max-file: "3"
 
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
 volumes:
   postgres_data:
   knowledge_data:
+
+networks:
+  front: {}
+  back: {}
