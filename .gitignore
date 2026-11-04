@@ -33,3 +33,5 @@ src/web/dist/
 /training_materials/
 
 .test-temp/
+
+/reports/
