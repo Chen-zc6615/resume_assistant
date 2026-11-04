@@ -22,13 +22,12 @@ data/
 src/web/node_modules/
 src/web/dist/
 
-# IDE
-.idea/
-.vscode/
-
 # Local deployment credentials and server notes
 服务器与大模型配置帮助文档.md
 
-/Day16
-/Day17
-/培训文档/Day18
+# 培训课程材料（公开仓库不入库,本地保留）
+/training_materials/
+
+.test-temp/
+
+/reports/
