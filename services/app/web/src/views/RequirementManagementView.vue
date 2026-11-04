@@ -1,8 +1,12 @@
 <template>
   <div class="space-y-5">
-    <!-- 统计 -->
+    <!-- 统计（前三卡点击定位到列表，累计简历卡跳简历库） -->
     <section class="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      <div class="bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-shadow hover:shadow-sm">
+      <button
+        type="button"
+        class="text-left bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-colors hover:border-brand-300 cursor-pointer"
+        @click="focusList"
+      >
         <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
           <el-icon :size="20"><Tickets /></el-icon>
         </div>
@@ -10,8 +14,12 @@
           <div class="text-2xl font-semibold text-ink-900 tracking-tight">{{ requirements.length }}</div>
           <div class="text-xs text-ink-500">招聘需求</div>
         </div>
-      </div>
-      <div class="bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-shadow hover:shadow-sm">
+      </button>
+      <button
+        type="button"
+        class="text-left bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-colors hover:border-brand-300 cursor-pointer"
+        @click="focusList"
+      >
         <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
           <el-icon :size="20"><Briefcase /></el-icon>
         </div>
@@ -19,8 +27,12 @@
           <div class="text-2xl font-semibold text-ink-900 tracking-tight">{{ jobTotal }}</div>
           <div class="text-xs text-ink-500">岗位总数</div>
         </div>
-      </div>
-      <div class="bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-shadow hover:shadow-sm">
+      </button>
+      <button
+        type="button"
+        class="text-left bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-colors hover:border-brand-300 cursor-pointer"
+        @click="focusList"
+      >
         <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
           <el-icon :size="20"><VideoPlay /></el-icon>
         </div>
@@ -28,8 +40,12 @@
           <div class="text-2xl font-semibold text-ink-900 tracking-tight">{{ openJobs.length }}</div>
           <div class="text-xs text-ink-500">招聘中岗位</div>
         </div>
-      </div>
-      <div class="bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-shadow hover:shadow-sm">
+      </button>
+      <button
+        type="button"
+        class="text-left bg-card rounded-xl border border-hairline p-4 flex items-center gap-4 transition-colors hover:border-brand-300 cursor-pointer"
+        @click="$router.push('/library')"
+      >
         <div class="w-10 h-10 rounded-xl bg-page text-ink-600 flex items-center justify-center">
           <el-icon :size="20"><Files /></el-icon>
         </div>
@@ -37,10 +53,10 @@
           <div class="text-2xl font-semibold text-ink-900 tracking-tight">{{ resumeTotal }}</div>
           <div class="text-xs text-ink-500">累计收到简历（份）</div>
         </div>
-      </div>
+      </button>
     </section>
 
-    <section class="grid grid-cols-1 xl:grid-cols-4 gap-5 items-start">
+    <section ref="listSection" class="grid grid-cols-1 xl:grid-cols-4 gap-5 items-start">
       <!-- 需求列表 -->
       <div class="xl:col-span-1 bg-card rounded-xl border border-hairline p-4">
         <div class="flex items-center justify-between">
@@ -436,8 +452,8 @@ import {
   Briefcase, Delete, Document, EditPen, Files, FolderOpened, Plus, Tickets, VideoPlay,
 } from '@element-plus/icons-vue'
 import {
-  addToJobGroup, createJob, createRequirement, deleteJob, deleteRequirement, listJobGroup, listJobs,
-  listRequirementPool, listRequirements, listResumes, reassignRequirement, removeFromJobGroup,
+  addToJobGroup, createJob, createRequirement, deleteJob, deleteRequirement, getUsername, listJobGroup,
+  listJobs, listRequirementPool, listRequirements, listResumes, reassignRequirement, removeFromJobGroup,
   screenJobGroup, updateJob, updateRequirement,
 } from '../api'
 import { toast } from '../components/toast'
@@ -461,8 +477,19 @@ const jobTotal = computed(() => requirements.value.reduce((s, r) => s + (r.job_c
 const resumeTotal = computed(() => requirements.value.reduce((s, r) => s + (r.resume_count ?? 0), 0))
 const openJobs = computed(() => jobs.value.filter((j) => j.job_status === 1))
 
+// 统计卡点击定位：滚动到需求列表并轻微高亮
+const listSection = ref<HTMLElement | null>(null)
+function focusList() {
+  listSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 async function load() {
-  requirements.value = await listRequirements()
+  try {
+    requirements.value = await listRequirements()
+  } catch (e) {
+    toast(((e as { friendly?: string }).friendly ?? '需求列表加载失败'), 'error')
+    return
+  }
   if (selected.value && !requirements.value.some((r) => r.requirement_id === selected.value!.requirement_id)) {
     selected.value = null
     jobs.value = []
@@ -521,8 +548,13 @@ async function doDelete(r: Requirement) {
 
 async function select(r: Requirement) {
   selected.value = r
-  jobs.value = (await listJobs()).filter((j) => j.requirement_id === r.requirement_id)
-  await reloadGroupCounts()
+  try {
+    jobs.value = (await listJobs()).filter((j) => j.requirement_id === r.requirement_id)
+    await reloadGroupCounts()
+  } catch (e) {
+    jobs.value = []
+    toast(((e as { friendly?: string }).friendly ?? '岗位加载失败'), 'error')
+  }
 }
 
 // ---------------- 需求池 ----------------
@@ -557,10 +589,14 @@ const groupCounts = ref<Record<number, number>>({})
 
 async function reloadGroupCounts() {
   const counts: Record<number, number> = {}
-  await Promise.all(jobs.value.map(async (j) => {
-    counts[j.job_id] = (await listJobGroup(j.job_id)).length
-  }))
-  groupCounts.value = counts
+  try {
+    await Promise.all(jobs.value.map(async (j) => {
+      counts[j.job_id] = (await listJobGroup(j.job_id)).length
+    }))
+    groupCounts.value = counts
+  } catch (e) {
+    toast(((e as { friendly?: string }).friendly ?? '分组数量加载失败'), 'error')
+  }
 }
 
 async function doReassign() {
@@ -621,7 +657,7 @@ async function submitJob() {
     ...jobForm,
     requirement_id: selected.value.requirement_id,
     bonus_items: bonusItemsOf(),
-    job_created_by: jobEditing.value?.job_created_by ?? 'hr_admin',
+    job_created_by: jobEditing.value?.job_created_by ?? getUsername(),
   }
   try {
     if (jobEditing.value) {
@@ -641,20 +677,28 @@ async function submitJob() {
 
 async function toggleJob(job: Job) {
   const next = job.job_status === 1 ? 2 : job.job_status === 2 ? 1 : 1
-  await updateJob(job.job_id, {
-    requirement_id: job.requirement_id, job_code: job.job_code, job_name: job.job_name,
-    headcount: job.headcount, major: job.major, job_jd: job.job_jd,
-    job_min_degree: job.job_min_degree, job_min_exp_years: job.job_min_exp_years,
-    job_required_skills: job.job_required_skills, job_optional_skills: job.job_optional_skills,
-    bonus_items: job.bonus_items, job_status: next, job_created_by: job.job_created_by,
-  })
-  toast(next === 1 ? '岗位已恢复招聘' : '岗位已暂停招聘', next === 1 ? 'success' : 'warn')
+  try {
+    await updateJob(job.job_id, {
+      requirement_id: job.requirement_id, job_code: job.job_code, job_name: job.job_name,
+      headcount: job.headcount, major: job.major, job_jd: job.job_jd,
+      job_min_degree: job.job_min_degree, job_min_exp_years: job.job_min_exp_years,
+      job_required_skills: job.job_required_skills, job_optional_skills: job.job_optional_skills,
+      bonus_items: job.bonus_items, job_status: next, job_created_by: job.job_created_by,
+    })
+    toast(next === 1 ? '岗位已恢复招聘' : '岗位已暂停招聘', next === 1 ? 'success' : 'warn')
+  } catch (e) {
+    toast(((e as { friendly?: string }).friendly ?? '岗位状态更新失败'), 'error')
+  }
   if (selected.value) await select(selected.value)
 }
 
 async function doDeleteJob(job: Job) {
-  await deleteJob(job.job_id)
-  toast('岗位已删除（历史筛选结果保留）', 'warn')
+  try {
+    await deleteJob(job.job_id)
+    toast('岗位已删除（历史筛选结果保留）', 'warn')
+  } catch (e) {
+    toast(((e as { friendly?: string }).friendly ?? '岗位删除失败'), 'error')
+  }
   if (selected.value) await select(selected.value)
 }
 
@@ -703,10 +747,15 @@ async function reloadGroup() {
 }
 
 async function loadLibrary() {
-  const all = await listResumes(libraryFilter.value ?? undefined)
-  library.value = libraryFilter.value == null
-    ? all.filter((r) => r.status !== 3 && r.status !== 4)
-    : all
+  try {
+    const all = await listResumes(libraryFilter.value ?? undefined)
+    // 待筛选池：排除失败（0/1/2）、已判定（3/4）与处理中（7/8），只留待推进的简历
+    library.value = libraryFilter.value == null
+      ? all.filter((r) => ![0, 1, 2, 3, 4, 7, 8].includes(r.status))
+      : all
+  } catch (e) {
+    toast(((e as { friendly?: string }).friendly ?? '简历库加载失败'), 'error')
+  }
 }
 
 async function doAddToGroup() {

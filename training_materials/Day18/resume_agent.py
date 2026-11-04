@@ -187,7 +187,7 @@ class KnowledgeBaseGateway:
             "query": data["query"],
             "citations": [
                 {
-                    "document_id": item["document_id"],
+                    "talent_card_id": item["talent_card_id"],
                     "chunk_id": item["chunk_id"],
                     "document_type": item["document_type"],
                     "content": item["content"],

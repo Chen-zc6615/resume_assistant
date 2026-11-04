@@ -125,7 +125,6 @@ def run_results(run_id: int, db: Session = Depends(get_db)):
                 result_id=r.result_id,
                 run_id=r.run_id,
                 resume_id=r.resume_id,
-                profile_id=r.profile_id,
                 result=r.result,
                 reasons=[ReasonItem.model_validate(x) for x in (r.reasons or [])],
                 name=resume.profile.name if resume and resume.profile else None,

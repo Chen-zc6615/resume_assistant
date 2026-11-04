@@ -84,7 +84,7 @@ class MarkdownChunker:
 
     def split(
         self,
-        document_id: str,
+        talent_card_id: str,
         document_type: str,
         content: str,
         metadata: dict[str, Any] | None = None,
@@ -96,17 +96,17 @@ class MarkdownChunker:
         for section, section_text in self._sections(body):
             for part in self._split_long_text(section_text):
                 index = len(chunks)
-                digest = hashlib.sha256(f"{document_id}:{index}".encode()).hexdigest()[:16]
+                digest = hashlib.sha256(f"{talent_card_id}:{index}".encode()).hexdigest()[:16]
                 chunk_metadata = {
                     **base_metadata,
-                    "document_id": document_id,
+                    "talent_card_id": talent_card_id,
                     "document_type": document_type,
                     "section": section or "正文",
                     "chunk_index": index,
                 }
                 chunks.append(
                     Chunk(
-                        chunk_id=f"{document_id}:{digest}",
+                        chunk_id=f"{talent_card_id}:{digest}",
                         content=part,
                         metadata=chunk_metadata,
                     )

@@ -9,6 +9,6 @@ def setup_logging() -> None:
         stream=sys.stdout,
         force=True,
     )
-    for noisy in ("httpx", "httpcore", "openai", "chromadb"):
+    for noisy in ("httpx", "httpcore", "litellm", "LiteLLM", "openai", "chromadb"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 

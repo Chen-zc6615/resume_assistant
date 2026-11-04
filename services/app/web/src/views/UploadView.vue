@@ -296,7 +296,7 @@ import {
   ArrowRight, Close, Document, UploadFilled, VideoPlay, Warning,
 } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { batchStatus, listJobs, listRequirements, uploadResumes } from '../api'
+import { batchStatus, getUsername, listJobs, listRequirements, uploadResumes } from '../api'
 import { toast } from '../components/toast'
 import type { BatchStatus, Job, Requirement, UploadItem, UploadResponse } from '../types'
 
@@ -393,7 +393,7 @@ async function startUpload() {
 
 async function doUpload(files: File[]) {
   try {
-    const resp = await uploadResumes(files, 'hr_admin', requirementId.value as number)
+    const resp = await uploadResumes(files, getUsername(), requirementId.value as number)
     uploadResult.value = resp
     const hasNew = resp.items.some((i: UploadItem) => i.accepted && !i.duplicated)
     if (hasNew) startPolling(resp.batch_id)

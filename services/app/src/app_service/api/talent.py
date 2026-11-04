@@ -157,7 +157,7 @@ def retry_pool_knowledge_sync(pool_id: int, db: Session = Depends(get_db)):
         raise HTTPException(503, "知识库同步失败，请稍后重试") from exc
     return {
         "ok": True,
-        "document_id": result.document_id,
+        "talent_card_id": result.talent_card_id,
         "chunk_count": result.chunk_count,
     }
 
@@ -174,7 +174,7 @@ def _pool_out(db: Session, entry: TalentPool) -> TalentPoolOut:
         created_by=entry.created_by,
         created_at=str(entry.created_at) if entry.created_at else None,
         knowledge_sync_status=entry.knowledge_sync_status,
-        knowledge_document_id=entry.knowledge_document_id,
+        knowledge_talent_card_id=entry.knowledge_talent_card_id,
         knowledge_chunk_count=entry.knowledge_chunk_count,
         knowledge_sync_error=entry.knowledge_sync_error,
         knowledge_synced_at=(

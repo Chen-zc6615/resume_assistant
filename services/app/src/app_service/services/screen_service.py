@@ -264,7 +264,6 @@ def execute_run(db: Session, run: FilterRun, resume_ids: list[int] | None = None
                 FilterResult(
                     run_id=run.run_id,
                     resume_id=resume.resume_id,
-                    profile_id=None,
                     result="PENDING_REVIEW",
                     reasons=[
                         ReasonItem(rule="归一化数据", passed=None, detail="简历无归一化结果，待人工复核").model_dump()
@@ -278,7 +277,6 @@ def execute_run(db: Session, run: FilterRun, resume_ids: list[int] | None = None
             FilterResult(
                 run_id=run.run_id,
                 resume_id=resume.resume_id,
-                profile_id=profile.profile_id,
                 result=result,
                 reasons=[r.model_dump() for r in reasons],
             )

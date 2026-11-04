@@ -49,12 +49,12 @@ def _project_payload(item) -> dict[str, Any]:
     }
 
 
-def build_knowledge_profile(db: Session, resume_id: int) -> dict[str, Any]:
-    """读取归一化简历并构造显式白名单的脱敏传输数据。"""
+def build_knowledge_profile(db: Session, entry: TalentPool) -> dict[str, Any]:
+    """读取归一化简历并构造显式白名单的脱敏传输数据；create_date 为人才入库时间（数据库事实）。"""
 
     profile = db.scalar(
         select(ResumeProfile)
-        .where(ResumeProfile.resume_id == resume_id)
+        .where(ResumeProfile.resume_id == entry.resume_id)
         .options(
             selectinload(ResumeProfile.skills),
             selectinload(ResumeProfile.education_experiences),
@@ -84,12 +84,12 @@ def build_knowledge_profile(db: Session, resume_id: int) -> dict[str, Any]:
     # 电话、邮箱、PDF 原文/路径、HR 备注不在白名单中，不能进入知识库请求。
     return {
         "source_resume_id": profile.resume_id,
-        "source_profile_id": profile.profile_id,
         "name": profile.name,
         "gender": profile.gender,
         "highest_education": profile.highest_education,
         "graduation_institution": profile.graduation_institution,
         "total_work_months": profile.total_work_months,
+        "create_date": entry.created_at.strftime("%Y-%m-%d"),
         "skills": sorted(
             (item.skill_name for item in profile.skills),
             key=str.casefold,
@@ -105,16 +105,16 @@ def sync_talent_to_knowledge(db: Session, entry: TalentPool) -> DocumentWriteRes
 
     if entry.pool_id is None:
         raise TalentKnowledgeDataError("人才库记录尚未提交，无法同步")
-    document_id = f"talent-{entry.pool_id}"
+    talent_card_id = f"talent-{entry.pool_id}"
     entry.knowledge_sync_status = "syncing"
-    entry.knowledge_document_id = document_id
+    entry.knowledge_talent_card_id = talent_card_id
     entry.knowledge_sync_error = None
     db.commit()
 
     try:
-        profile = build_knowledge_profile(db, entry.resume_id)
+        profile = build_knowledge_profile(db, entry)
         result = knowledge_client.upsert_talent_profile(
-            document_id=document_id,
+            talent_card_id=talent_card_id,
             profile=profile,
         )
     except TalentKnowledgeDataError:
@@ -125,7 +125,7 @@ def sync_talent_to_knowledge(db: Session, entry: TalentPool) -> DocumentWriteRes
         raise
 
     entry.knowledge_sync_status = "success"
-    entry.knowledge_document_id = result.document_id
+    entry.knowledge_talent_card_id = result.talent_card_id
     entry.knowledge_chunk_count = result.chunk_count
     entry.knowledge_sync_error = None
     entry.knowledge_synced_at = datetime.now(UTC)
