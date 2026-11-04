@@ -1,12 +1,4 @@
-# ---------- 前端构建 ----------
-FROM node:24-alpine AS frontend-builder
-WORKDIR /build
-COPY services/app/web/package.json services/app/web/package-lock.json ./
-RUN npm ci
-COPY services/app/web/ ./
-RUN npm run build
-
-# ---------- 运行镜像 ----------
+# 主服务镜像：纯后端 API（前端独立部署，见 services/app/web/Dockerfile）
 FROM python:3.12-slim
 COPY --from=ghcr.io/astral-sh/uv:0.12.19 /uv /uvx /usr/local/bin/
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -32,8 +24,7 @@ COPY services/app/migrations ./services/app/migrations
 # 仅安装本服务及其依赖（uv workspace 解析 resume-shared）
 RUN uv sync --frozen --no-dev --package resume-app-service
 
-# 前端构建产物（app.py 经 services/app/web/dist 挂载）
-COPY --from=frontend-builder /build/dist ./services/app/web/dist
+# 上传的简历文件保存目录（./data 卷挂载点）
 RUN mkdir -p /app/data/uploads
 
 ENV PATH="/app/.venv/bin:$PATH"

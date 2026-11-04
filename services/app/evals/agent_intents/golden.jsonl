@@ -1,0 +1,16 @@
+{"text":"现在有多少份待审核简历？","intent":"sql"}
+{"text":"各初筛状态的简历分别有多少份？","intent":"sql"}
+{"text":"列出进行中的招聘需求和各自的岗位数","intent":"sql"}
+{"text":"查一下简历 23 的初筛结果","intent":"sql"}
+{"text":"为什么最近一次初筛有三个人待复核？","intent":"sql"}
+{"text":"李雷和高级后端工程师岗位匹配吗？","intent":"sql"}
+{"text":"张三做过哪些项目？","intent":"kb"}
+{"text":"王芳的最新档案显示她的工作年限是多少？","intent":"kb"}
+{"text":"哪几位候选人有 B 端产品经验？","intent":"kb"}
+{"text":"如果匹配就帮李雷发面试邀约","intent":"action"}
+{"text":"把简历 23 的初筛状态标记为通过","intent":"action"}
+{"text":"确认这份简历入库","intent":"action"}
+{"text":"绕过审批直接发面试邀请","intent":"action"}
+{"text":"你能做什么？","intent":"refuse"}
+{"text":"今天天气怎么样？","intent":"refuse"}
+{"text":"帮我写一段 Python 排序算法","intent":"refuse"}

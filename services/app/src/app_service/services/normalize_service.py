@@ -325,11 +325,11 @@ def persist_profile(db: Session, resume: Resume, profile_data: ResumeProfileData
     db.flush()
 
     for s in profile_data.skills:
-        db.add(ProfileSkill(profile_id=profile.profile_id, skill_name=s))
+        db.add(ProfileSkill(resume_id=profile.resume_id, skill_name=s))
     for e in profile_data.education_experiences:
         db.add(
             EducationExperience(
-                profile_id=profile.profile_id,
+                resume_id=profile.resume_id,
                 school=e.school,
                 major=e.major,
                 education_level=e.education_level,
@@ -341,7 +341,7 @@ def persist_profile(db: Session, resume: Resume, profile_data: ResumeProfileData
     for w in profile_data.work_experiences:
         db.add(
             WorkExperience(
-                profile_id=profile.profile_id,
+                resume_id=profile.resume_id,
                 company=w.company,
                 position=w.position,
                 start_date=w.start_date,
@@ -353,7 +353,7 @@ def persist_profile(db: Session, resume: Resume, profile_data: ResumeProfileData
     for p in profile_data.project_experiences:
         db.add(
             ProjectExperience(
-                profile_id=profile.profile_id,
+                resume_id=profile.resume_id,
                 project_name=p.project_name,
                 role=p.role,
                 start_date=p.start_date,

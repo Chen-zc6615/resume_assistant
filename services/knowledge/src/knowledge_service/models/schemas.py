@@ -12,7 +12,7 @@ class DocumentUpsert(BaseModel):
 
 
 class DocumentWriteResponse(BaseModel):
-    document_id: str
+    talent_card_id: str
     chunk_count: int
 
 
@@ -76,7 +76,6 @@ class TalentProfileUpsert(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     source_resume_id: int = Field(gt=0)
-    source_profile_id: int | None = Field(default=None, gt=0)
     name: str = Field(min_length=1)
     gender: Literal[0, 1] | None = None
     highest_education: str | None = None
@@ -86,6 +85,7 @@ class TalentProfileUpsert(BaseModel):
     education_experiences: list[TalentEducation] = Field(default_factory=list)
     work_experiences: list[TalentWork] = Field(default_factory=list)
     project_experiences: list[TalentProject] = Field(default_factory=list)
+    create_date: str | None = None
 
 
 class SearchRequest(BaseModel):
@@ -96,7 +96,7 @@ class SearchRequest(BaseModel):
 
 class SearchResult(BaseModel):
     chunk_id: str
-    document_id: str
+    talent_card_id: str
     document_type: str
     content: str
     metadata: dict[str, Any]

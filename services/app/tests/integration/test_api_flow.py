@@ -71,8 +71,10 @@ def mock_llm(monkeypatch):
 @pytest.fixture()
 def client():
     from app_service.app import create_app
+    from app_service.core.auth_security import hash_password
     from app_service.db.base import Base
-    from app_service.db.session import engine
+    from app_service.db.session import SessionLocal, engine
+    from app_service.models.db_models import UserAccount
     from app_service.services import pipeline
 
     with TestClient(create_app()) as c:
@@ -80,6 +82,26 @@ def client():
         Base.metadata.drop_all(engine)
         Base.metadata.create_all(engine)
         pipeline._batches.clear()
+        # 鉴权：建测试用户并登录，client 默认携带会话令牌
+        db = SessionLocal()
+        try:
+            db.add(
+                UserAccount(
+                    username="flow_tester",
+                    display_name="流程测试",
+                    password_hash=hash_password("flow-pass-1"),
+                    status="normal",
+                )
+            )
+            db.commit()
+        finally:
+            db.close()
+        resp = c.post(
+            "/api/auth/login",
+            json={"username": "flow_tester", "password": "flow-pass-1"},
+        )
+        assert resp.status_code == 200, resp.text
+        c.headers["Authorization"] = f"Bearer {resp.json()['session_token']}"
         yield c
 
 

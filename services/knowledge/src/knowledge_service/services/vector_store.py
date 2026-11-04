@@ -19,8 +19,8 @@ class VectorStore:
             metadata={"hnsw:space": "cosine"},
         )
 
-    def upsert_document(self, document_id: str, chunks: list[Chunk]) -> int:
-        self.delete_document(document_id)
+    def upsert_document(self, talent_card_id: str, chunks: list[Chunk]) -> int:
+        self.delete_document(talent_card_id)
         vectors = self.embeddings.embed([chunk.content for chunk in chunks])
         self.collection.upsert(
             ids=[chunk.chunk_id for chunk in chunks],
@@ -30,8 +30,8 @@ class VectorStore:
         )
         return len(chunks)
 
-    def delete_document(self, document_id: str) -> None:
-        self.collection.delete(where={"document_id": document_id})
+    def delete_document(self, talent_card_id: str) -> None:
+        self.collection.delete(where={"talent_card_id": talent_card_id})
 
     def all_chunks(self) -> list[dict[str, Any]]:
         payload = self.collection.get(include=["documents", "metadatas"])

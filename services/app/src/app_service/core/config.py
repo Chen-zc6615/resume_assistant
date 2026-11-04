@@ -51,6 +51,12 @@ class Settings(BaseSettings):
     )
     max_llm_retries: int = 2  # SPEC：校验失败最多重试 2 次
 
+    # --- 招聘 Agent / Text2SQL ---
+    agent_max_result_rows: int = 50
+    agent_sql_timeout_ms: int = 3000
+    agent_llm_max_retries: int = 2
+    agent_llm_retry_backoff_seconds: float = 0.5
+
     # --- 解析服务（PDF -> 文本，独立微服务）---
     # 解析与 OCR 均由解析服务承担；本服务不再本地解析。
     parser_service_base_url: str = "http://127.0.0.1:8002"
@@ -66,10 +72,12 @@ class Settings(BaseSettings):
     knowledge_http_max_retries: int = 1
     knowledge_http_retry_backoff_seconds: float = 1.0
 
-    # --- HR 用户（MVP 无登录，透传）---
+    # --- HR 用户（登录会话鉴权；hr_id 在无显式用户时透传）---
     default_hr_id: str = "hr_admin"
 
     auth_session_hours: int = 8
+    # 首次启动 seed 管理员账号 hr_admin 用的初始密码（仅空表时创建一次）
+    auth_admin_password: str = "Resume@2026"
 
 
 @lru_cache

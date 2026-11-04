@@ -80,11 +80,11 @@ class KnowledgeEvaluator:
             metadata = chunk["metadata"]
             if not isinstance(metadata, dict):
                 continue
-            document_id = str(metadata.get("document_id", ""))
+            talent_card_id = str(metadata.get("talent_card_id", ""))
             chunk_index = metadata.get("chunk_index")
-            if document_id and isinstance(chunk_index, int):
+            if talent_card_id and isinstance(chunk_index, int):
                 chunk_id = str(chunk["chunk_id"])
-                aliases[chunk_id] = f"{document_id}_chunk_{chunk_index + 1}"
+                aliases[chunk_id] = f"{talent_card_id}_chunk_{chunk_index + 1}"
         return aliases
 
     def _aliases(self, chunk_ids: list[str]) -> list[str]:
@@ -92,20 +92,20 @@ class KnowledgeEvaluator:
 
     def corpus_stats(self) -> CorpusStats:
         lengths = [len(str(chunk["content"])) for chunk in self.chunks]
-        document_ids = {
-            str(chunk["metadata"].get("document_id"))
+        talent_card_ids = {
+            str(chunk["metadata"].get("talent_card_id"))
             for chunk in self.chunks
             if isinstance(chunk["metadata"], dict)
-            and chunk["metadata"].get("document_id") is not None
+            and chunk["metadata"].get("talent_card_id") is not None
         }
-        required_metadata = ("document_id", "document_type", "section", "chunk_index")
+        required_metadata = ("talent_card_id", "document_type", "section", "chunk_index")
         complete_chunks = sum(
             isinstance(chunk["metadata"], dict)
             and all(key in chunk["metadata"] for key in required_metadata)
             for chunk in self.chunks
         )
         return CorpusStats(
-            document_count=len(document_ids),
+            document_count=len(talent_card_ids),
             chunk_count=len(self.chunks),
             average_chunk_length=_average([float(length) for length in lengths]),
             minimum_chunk_length=min(lengths, default=0),

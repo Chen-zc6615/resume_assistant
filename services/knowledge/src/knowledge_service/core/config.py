@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     embedding_model: str = Field(min_length=1)
     rerank_model: str = Field(min_length=1)
 
+    # 卡片展示字段（entities/summary）LLM 生成；与 embedding/rerank 共用平台凭据
+    card_llm_model: str = "qwen3.7-plus"
+    card_llm_retries: int = Field(default=2, ge=0, le=5)
+
     knowledge_data_dir: Path = SERVICE_ROOT / "data"
     knowledge_wiki_dir: Path = SERVICE_ROOT / "data" / "wiki"
     knowledge_chunk_size: int = Field(default=550, ge=100)

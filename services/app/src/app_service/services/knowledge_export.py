@@ -71,20 +71,20 @@ def export_talent_profiles(db: Connection, out: Path) -> None:
     for p in profiles:
         skills = [r["skill_name"] for r in _rows(
             db,
-            "SELECT skill_name FROM profile_skills WHERE profile_id = :profile_id",
-            {"profile_id": p["profile_id"]},
+            "SELECT skill_name FROM profile_skills WHERE resume_id = :resume_id",
+            {"resume_id": p["resume_id"]},
         )]
         works = _rows(
             db,
             "SELECT company, position, start_date, end_date, is_current, description "
-            "FROM work_experiences WHERE profile_id = :profile_id ORDER BY start_date DESC",
-            {"profile_id": p["profile_id"]},
+            "FROM work_experiences WHERE resume_id = :resume_id ORDER BY start_date DESC",
+            {"resume_id": p["resume_id"]},
         )
         projects = _rows(
             db,
             "SELECT project_name, role, description "
-            "FROM project_experiences WHERE profile_id = :profile_id",
-            {"profile_id": p["profile_id"]},
+            "FROM project_experiences WHERE resume_id = :resume_id",
+            {"resume_id": p["resume_id"]},
         )
         # 各岗最新初筛结果（仅统计在组岗位，口径同 screen_service._merge_and_summarize）
         verdicts = _rows(

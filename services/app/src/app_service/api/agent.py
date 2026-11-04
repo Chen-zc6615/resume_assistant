@@ -7,7 +7,7 @@ from app_service.db.session import get_db
 from app_service.models.schemas import AgentChatRequest, AgentChatResponse
 from app_service.services import agent_service
 
-router = APIRouter()
+router = APIRouter()  #这个router会注册到主应用中 agent.router
 
 
 @router.post("/chat", response_model=AgentChatResponse)

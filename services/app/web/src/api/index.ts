@@ -31,6 +31,14 @@ export const setToken = (token: string | null) => {
   else localStorage.removeItem(TOKEN_KEY)
 }
 
+// ---- 登录用户名（上传/筛选等 hr_id 字段用；未登录兜底默认管理员）----
+const USERNAME_KEY = 'sr_username'
+export const getUsername = () => localStorage.getItem(USERNAME_KEY) || 'hr_admin'
+export const setUsername = (name: string | null) => {
+  if (name) localStorage.setItem(USERNAME_KEY, name)
+  else localStorage.removeItem(USERNAME_KEY)
+}
+
 http.interceptors.request.use((config) => {
   const token = getToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
@@ -45,6 +53,7 @@ http.interceptors.response.use(
     // 会话过期/未登录：清除本地态并回登录页（登录接口自身的 401 是凭据错误，不跳转）
     if (err.response?.status === 401 && !err.config?.url?.includes('/auth/login')) {
       setToken(null)
+      setUsername(null)
       if (location.pathname !== '/login') location.assign('/login')
     }
     return Promise.reject(err)
@@ -75,8 +84,10 @@ export const uploadResumes = (files: File[], hrId: string, requirementId: number
   return http.post<UploadResponse>('/resumes/upload', form).then((r) => r.data)
 }
 
-export const listResumes = (status?: number) =>
-  http.get<ResumeBrief[]>('/resumes', { params: status != null ? { status } : {} }).then((r) => r.data)
+export const listResumes = (status?: number, limit = 200) =>
+  http.get<ResumeBrief[]>('/resumes', {
+    params: { ...(status != null ? { status } : {}), limit },
+  }).then((r) => r.data)
 
 export const resumeStats = () => http.get('/resumes/stats').then((r) => r.data)
 
@@ -206,10 +217,12 @@ export const sendTaskMessage = (taskId: number, message: string) =>
   http.post<TaskMessageResponse>(`/tasks/${taskId}/messages`, { message }).then((r) => r.data)
 
 export interface TaskStreamEvent {
-  type: 'delta' | 'tool' | 'done' | 'error'
+  type: 'delta' | 'tool' | 'intent' | 'done' | 'error'
   text?: string
   name?: string
   success?: boolean
+  /** intent 事件携带的意图值（kb/sql/action/refuse） */
+  intent?: string
   payload?: TaskMessageResponse
   detail?: string
   status?: number
@@ -224,12 +237,22 @@ export async function sendTaskMessageStream(
   message: string,
   onEvent: (event: TaskStreamEvent) => void,
 ): Promise<TaskMessageResponse> {
+  // 原生 fetch 不走 axios 拦截器：手动带 Bearer，并补齐 401 清态跳登录语义
+  const token = getToken()
   const resp = await fetch(`/api/tasks/${taskId}/messages/stream`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({ message }),
   })
   if (!resp.ok) {
+    if (resp.status === 401) {
+      setToken(null)
+      setUsername(null)
+      if (location.pathname !== '/login') location.assign('/login')
+    }
     const detail = await resp.json().catch(() => null)
     const error: any = new Error('任务执行失败')
     error.friendly = detail?.detail || `请求失败（${resp.status}）`
