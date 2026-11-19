@@ -19,7 +19,7 @@ Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max
 YearMonth = Annotated[str, StringConstraints(pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$")]
 
 
-class ResumeTriple(BaseModel):
+class ExtractedTriple(BaseModel):
     """(Candidate) -[relation]-> (tail)。头实体恒为候选人，所以不设 head 字段。"""
 
     # extra="forbid"：LLM 多吐出任何未声明字段都直接报错，而不是悄悄忽略
@@ -67,4 +67,15 @@ class GraphExtractionResult(BaseModel):
 
     # 三元组列表；简历里抽不到任何东西时为空列表，而不是编造
     # default_factory=list：每个实例各自新建列表，避免多个实例共用同一个可变默认值
-    triples: list[ResumeTriple] = Field(default_factory=list)
+    triples: list[ExtractedTriple] = Field(default_factory=list)
+
+
+class ResumeTriple(ExtractedTriple):
+    """入库用的三元组：在 LLM 抽取结果（ExtractedTriple）上补上头实体。
+
+    头实体由系统按 candidate_id 注入，不让 LLM 决定候选人是谁。
+    head_type 目前只允许 Candidate；以后要支持别的头实体，放宽这里并补校验即可。
+    """
+
+    head_type: Literal["Candidate"] = "Candidate"
+    head_id: Name
