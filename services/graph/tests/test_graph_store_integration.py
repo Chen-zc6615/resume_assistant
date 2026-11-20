@@ -1,11 +1,11 @@
 import pytest
 from graph_service.core.config import Settings
-from graph_service.db.neo4j_store import UNIQUE_CONSTRAINTS, GraphStore
+from graph_service.db.graph_store import UNIQUE_CONSTRAINTS, GraphStore
 from pydantic import ValidationError
 
 
 @pytest.fixture
-def real_store():
+def neo4j_main_store():
     try:
         store = GraphStore(Settings())
     except ValidationError as e:
@@ -23,9 +23,9 @@ def real_store():
     store.close()
 
 
-def test_init_schema_is_idempotent(real_store):
-    assert real_store.init_schema()
-    assert real_store.init_schema()
-    records, _, _ = real_store._driver.execute_query("SHOW CONSTRAINTS YIELD name RETURN name")
+def test_init_schema_is_idempotent(neo4j_main_store):
+    assert neo4j_main_store.init_schema()
+    assert neo4j_main_store.init_schema()
+    records, _, _ = neo4j_main_store._driver.execute_query("SHOW CONSTRAINTS YIELD name RETURN name")
     names = {r["name"] for r in records}
     assert {c[0] for c in UNIQUE_CONSTRAINTS} <= names

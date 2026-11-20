@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 # (约束名, Label, 唯一键)：对应 README 图模型里的"唯一键"一列
 UNIQUE_CONSTRAINTS: tuple[tuple[str, str, str], ...] = (
     ("document_doc_id", "Document", "doc_id"),
-    ("candidate_id", "Candidate", "candidate_id"),
+    ("candidate_resume_id", "Candidate", "resume_id"),
     ("job_id", "Job", "job_id"),
     ("skill_name", "Skill", "name"),
     ("company_name", "Company", "name"),
@@ -53,5 +53,10 @@ class GraphStore:
         logger.info("图约束就绪：%d 条", len(UNIQUE_CONSTRAINTS))
         return True
 
-    def write_triple(self, query: str, params: dict) -> None:
-        self._driver.execute_query(query, params, database_=self._database)
+    def execute_in_transaction(self, queries: list[tuple[str, dict]]) -> None:
+        def work(tx):
+            for query, params in queries:
+                tx.run(query, params)
+
+        with self._driver.session(database=self._database) as session:
+            session.execute_write(work)

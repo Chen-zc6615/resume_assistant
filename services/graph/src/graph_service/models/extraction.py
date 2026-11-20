@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 RelationType = Literal["HAS_SKILL", "WORKED_AT", "STUDIED_AT"]
+HeadType = Literal["Candidate"]
 TailType = Literal["Skill", "Company", "School"]
 
 RELATION_TAIL: dict[str, TailType] = {
@@ -14,6 +15,12 @@ RELATION_TAIL: dict[str, TailType] = {
 # 名称类型：字符串，先去首尾空白，且长度 1~100
 # 防止 LLM 输出空串、纯空格或超长的整段文字当作实体名
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+
+# 原句：简历中支撑某条关系的原文，与"名称"是两回事，上限单独管理（目前仍为 100，见待办）
+Snippet = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+
+# 简历 ID：与主库 resumes.resume_id、卡片契约 source_resume_id 同一口径（正整数）
+ResumeId = Annotated[int, Field(gt=0)]
 
 # 年月类型：严格匹配 YYYY-MM，月份限定 01~12（与 app 服务的 YearMonth 格式一致）
 YearMonth = Annotated[str, StringConstraints(pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$")]
@@ -32,7 +39,7 @@ class ExtractedTriple(BaseModel):
     # 尾实体名称；Field(...) 表示必填；description 会进入 JSON Schema，帮助 LLM 理解
     tail_name: Name = Field(..., description="简历原文中的名称，不得改写")
     ## 原文佐证句：必填。后续在 services 层核对它是否真在简历里，用来防编造
-    context_snippet: Name = Field(..., description="简历中支撑该关系的原句，必填")
+    context_snippet: Snippet = Field(..., description="简历中支撑该关系的原句，必填")
     # 职位：仅 WORKED_AT 用；简历没写就是 None（红线：未提及一律 null）
     position: str | None = Field(default=None, description="仅 WORKED_AT")
     # 专业：仅 STUDIED_AT 用；同样没写就是 None
@@ -73,9 +80,9 @@ class GraphExtractionResult(BaseModel):
 class ResumeTriple(ExtractedTriple):
     """入库用的三元组：在 LLM 抽取结果（ExtractedTriple）上补上头实体。
 
-    头实体由系统按 candidate_id 注入，不让 LLM 决定候选人是谁。
+    头实体由系统按 resume_id 注入，不让 LLM 决定候选人是谁。
     head_type 目前只允许 Candidate；以后要支持别的头实体，放宽这里并补校验即可。
     """
 
-    head_type: Literal["Candidate"] = "Candidate"
-    head_id: Name
+    head_type: HeadType = "Candidate"
+    resume_id: ResumeId

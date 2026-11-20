@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from graph_service.api.routes import router
 from graph_service.core.config import get_settings
 from graph_service.core.logger import setup_logging
-from graph_service.db.neo4j_store import GraphStore
+from graph_service.db.graph_store import GraphStore
 
 
 def create_app(store: GraphStore | None = None) -> FastAPI:
