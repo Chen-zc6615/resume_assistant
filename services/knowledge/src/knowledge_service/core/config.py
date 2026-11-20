@@ -10,20 +10,23 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[5]
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=REPOSITORY_ROOT / ".env",
+        # 约定：命令从仓库根目录运行，读取根目录 .env；容器内配置由 compose 注入
+        env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
         str_strip_whitespace=True,
     )
 
-    model_api_key: str = Field(min_length=1)
-    model_base_url: str = Field(min_length=1)
+    # 全仓库唯一一组模型网关凭据（OpenAI 兼容），与 app/parser 共用
+    llm_api_key: str = Field(min_length=1)
+    llm_base_url: str = Field(min_length=1)
     embedding_model: str = Field(min_length=1)
     rerank_model: str = Field(min_length=1)
 
     # 卡片展示字段（entities/summary）LLM 生成；与 embedding/rerank 共用平台凭据
     card_llm_model: str = "qwen3.7-plus"
     card_llm_retries: int = Field(default=2, ge=0, le=5)
+    card_llm_timeout_seconds: float = Field(default=60.0, gt=0)
 
     knowledge_data_dir: Path = SERVICE_ROOT / "data"
     knowledge_wiki_dir: Path = SERVICE_ROOT / "data" / "wiki"

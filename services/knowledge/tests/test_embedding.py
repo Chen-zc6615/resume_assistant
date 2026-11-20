@@ -20,8 +20,8 @@ def test_embed_batches_inputs_and_preserves_response_order(monkeypatch):
     monkeypatch.setattr(embedding_module, "litellm_embedding", fake_embedding)
     settings = SimpleNamespace(
         embedding_model="test-embedding-model",
-        model_api_key="test-key",
-        model_base_url="https://example.test/v1/",
+        llm_api_key="test-key",
+        llm_base_url="https://example.test/v1/",
         embedding_timeout_seconds=30.0,
     )
     client = EmbeddingClient(settings)

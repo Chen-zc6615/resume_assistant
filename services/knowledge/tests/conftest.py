@@ -11,7 +11,7 @@ import tempfile
 
 _TMP = tempfile.mkdtemp(prefix="knowledge_test_")
 os.environ.setdefault("KNOWLEDGE_DATA_DIR", _TMP)
-os.environ.setdefault("MODEL_API_KEY", "test-dummy")
-os.environ.setdefault("MODEL_BASE_URL", "http://127.0.0.1:9")  # 不可达即可，离线用例不调用
+os.environ.setdefault("LLM_API_KEY", "test-dummy")
+os.environ.setdefault("LLM_BASE_URL", "http://127.0.0.1:9")  # 不可达即可，离线用例不调用
 os.environ.setdefault("EMBEDDING_MODEL", "test-embed")
 os.environ.setdefault("RERANK_MODEL", "test-rerank")

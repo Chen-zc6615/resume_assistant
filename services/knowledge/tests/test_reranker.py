@@ -19,8 +19,8 @@ def test_score_uses_litellm_dashscope_provider_and_restores_order(monkeypatch):
     monkeypatch.setattr(reranker_module, "litellm_rerank", fake_rerank)
     settings = SimpleNamespace(
         rerank_model="qwen3-reranker-8b",
-        model_api_key="test-key",
-        model_base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        llm_api_key="test-key",
+        llm_base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
         rerank_timeout_seconds=30.0,
     )
     client = RerankerClient(settings)

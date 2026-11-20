@@ -105,7 +105,6 @@ resume_assistant/               # uv workspace monorepo（根 pyproject 仅调�
 │   │   └── web/                # Vue3 前端独立 npm 工程（:5173，代理 /api）
 │   ├── parser/                 # resume-parser-service :8002（PDF→文本，无状态）
 │   └── knowledge/              # resume-knowledge-service :8001（混合检索+重排）
-├── packages/shared/            # resume_shared（PDF 校验等跨服务共享）
 ├── specs/                      # PRD / TECH_ARCHITECTURE / DEPLOYMENT / api / function_specs
 ├── evals/                      # 黄金样本与验收数据（24 份 PDF）
 ├── data/                       # 运行时落盘（上传原件 + 人才 Wiki 卡片 md 副本）

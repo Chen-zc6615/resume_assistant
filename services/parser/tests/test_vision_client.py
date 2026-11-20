@@ -17,8 +17,8 @@ def test_recognize_png_uses_litellm_completion(monkeypatch):
     monkeypatch.setattr(vision_module, "litellm_completion", fake_completion)
     settings = SimpleNamespace(
         ocr_model="qwen-vl-max",
-        model_api_key="test-key",
-        model_base_url="https://example.test/v1/",
+        llm_api_key="test-key",
+        llm_base_url="https://example.test/v1/",
         ocr_timeout_seconds=30.0,
     )
     client = VisionClient(settings)

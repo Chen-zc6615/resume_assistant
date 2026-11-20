@@ -10,9 +10,9 @@ from knowledge_service.core.config import Settings
 class RerankerClient:
     def __init__(self, settings: Settings):
         self.model = settings.rerank_model
-        self.api_key = settings.model_api_key
+        self.api_key = settings.llm_api_key
         self.timeout = settings.rerank_timeout_seconds
-        self.api_base = settings.model_base_url.rstrip("/")
+        self.api_base = settings.llm_base_url.rstrip("/")
         if "/" in self.model:
             self.provider = None
         elif "dashscope.aliyuncs.com" in self.api_base:
