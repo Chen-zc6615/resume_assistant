@@ -15,16 +15,25 @@ def build_triple_query(triple: ResumeTriple) -> tuple[str, dict]:
     """
     name = canonicalize(triple.tail_type, triple.tail_name)
 
+    raw_props = {
+        "raw_name": triple.tail_name,
+        "context_snippet": triple.context_snippet,
+        "position": triple.position,
+        "major": triple.major,
+        "start_date": triple.start_date,
+        "end_date": triple.end_date,
+    }
+    props = {k: v for k, v in raw_props.items() if v is not None}
+
     query = (
-        f"MATCH (c:{triple.head_type} {{candidate_id: $candidate_id}})\n"
+        f"MERGE (c:{triple.head_type} {{candidate_id: $candidate_id}})\n"
         f"MERGE (t:{triple.tail_type} {{name: $name}})\n"
         f"MERGE (c)-[r:{triple.relation}]->(t)\n"
-        "SET r.raw_name = $raw_name, r.context_snippet = $context_snippet"
+        "SET r += $props"
     )
     params = {
         "candidate_id": triple.head_id,
         "name": name,
-        "raw_name": triple.tail_name,
-        "context_snippet": triple.context_snippet,
+        "props": props,
     }
     return query, params

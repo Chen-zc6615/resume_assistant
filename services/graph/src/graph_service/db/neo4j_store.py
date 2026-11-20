@@ -52,3 +52,6 @@ class GraphStore:
             return False
         logger.info("图约束就绪：%d 条", len(UNIQUE_CONSTRAINTS))
         return True
+
+    def write_triple(self, query: str, params: dict) -> None:
+        self._driver.execute_query(query, params, database_=self._database)
