@@ -12,16 +12,14 @@ COPY pyproject.toml uv.lock ./
 COPY services/app/pyproject.toml ./services/app/pyproject.toml
 COPY services/parser/pyproject.toml ./services/parser/pyproject.toml
 COPY services/knowledge/pyproject.toml ./services/knowledge/pyproject.toml
-COPY packages/shared/pyproject.toml ./packages/shared/pyproject.toml
 
-# 本服务与共享包源码
-COPY packages/shared/src ./packages/shared/src
+# 本服务源码
 COPY services/app/src ./services/app/src
 COPY services/app/main.py ./services/app/main.py
 COPY alembic.ini ./alembic.ini
 COPY services/app/migrations ./services/app/migrations
 
-# 仅安装本服务及其依赖（uv workspace 解析 resume-shared）
+# 仅安装本服务及其依赖
 RUN uv sync --frozen --no-dev --package resume-app-service
 
 # 上传的简历文件保存目录（./data 卷挂载点）

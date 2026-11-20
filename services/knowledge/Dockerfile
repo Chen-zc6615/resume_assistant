@@ -11,7 +11,8 @@ COPY pyproject.toml uv.lock ./
 COPY services/app/pyproject.toml ./services/app/pyproject.toml
 COPY services/parser/pyproject.toml ./services/parser/pyproject.toml
 COPY services/knowledge/pyproject.toml ./services/knowledge/pyproject.toml
-COPY packages/shared/pyproject.toml ./packages/shared/pyproject.toml
+COPY services/graph/pyproject.toml ./services/graph/pyproject.toml
+
 
 # 本服务源码
 COPY services/knowledge/src ./services/knowledge/src

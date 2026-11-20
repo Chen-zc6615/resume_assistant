@@ -64,11 +64,11 @@ def _generate_card_content(profile: TalentProfileUpsert) -> dict[str, Any]:
         try:
             response = completion(
                 model=f"openai/{settings.card_llm_model}",
-                api_key=settings.model_api_key,
-                api_base=settings.model_base_url,
+                api_key=settings.llm_api_key,
+                api_base=settings.llm_base_url,
                 response_format={"type": "json_object"},
                 temperature=0.1,
-                timeout=settings.model_timeout_seconds,
+                timeout=settings.card_llm_timeout_seconds,
                 messages=[
                     {"role": "system", "content": _CARD_KEYWORDS_PROMPT},
                     {"role": "user", "content": payload},

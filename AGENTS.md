@@ -16,7 +16,7 @@
 
 ## 四层架构（严禁跨层调用）
 
-本仓库为 uv workspace monorepo，三个后端服务平级位于 `services/`，公共代码位于 `packages/`：
+本仓库为 uv workspace monorepo，三个后端服务平级位于 `services/`：
 
 ```
 services/app/                 主服务（resume-app-service，端口 8000）
@@ -31,7 +31,6 @@ services/app/                 主服务（resume-app-service，端口 8000）
   tests/        单测 + 集成测试
 services/parser/              解析服务（resume-parser-service，端口 8002）
 services/knowledge/           知识库服务（resume-knowledge-service，端口 8001）
-packages/shared/              公共代码（resume_shared：PDF 校验等）
 ```
 
 > 数据库为现成服务（PostgreSQL 容器），不占 `services/` 目录。

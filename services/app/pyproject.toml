@@ -21,11 +21,7 @@ dependencies = [
     "bcrypt>=4.1",
     "dateparser>=1.2",
     "python-multipart>=0.0.9",
-    "resume-shared",
 ]
-
-[tool.uv.sources]
-resume-shared = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

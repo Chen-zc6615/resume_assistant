@@ -13,7 +13,7 @@ def test_extract_json_uses_normalization_model(monkeypatch):
         )
 
     settings = SimpleNamespace(
-        dashscope_api_key="test-key",
+        llm_api_key="test-key",
         llm_base_url="https://example.test/v1/",
         normalization_model="qwen-plus",
         normalization_timeout_seconds=20.0,
@@ -42,7 +42,7 @@ def test_complete_agent_uses_agent_model(monkeypatch):
         return SimpleNamespace(choices=[])
 
     settings = SimpleNamespace(
-        dashscope_api_key="test-key",
+        llm_api_key="test-key",
         llm_base_url="https://example.test/v1/",
         agent_model="qwen-max",
         agent_timeout_seconds=45.0,

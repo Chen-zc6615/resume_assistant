@@ -9,14 +9,13 @@
 
 ## 架构
 
-uv workspace monorepo，三个后端服务 + 公共包：
+uv workspace monorepo，三个后端服务：
 
 | 服务 | 端口 | 职责 |
 |---|---|---|
 | `services/app`（resume-app-service） | :8000 | 业务主线：上传/归一化/分配/初筛/审核/人才库/Agent + 托管前端构建产物 |
 | `services/parser`（resume-parser-service） | :8002 | PDF → 文本：PyMuPDF → pdfplumber → OCR 三级兜底 |
 | `services/knowledge`（resume-knowledge-service） | :8001 | Wiki 卡片索引与混合检索（BM25 + 向量 RRF + Rerank） |
-| `packages/shared`（resume-shared） | — | 公共代码（PDF 校验等） |
 | PostgreSQL 17 | :5432 / 测试库 :55432 | 结构化数据（17 张表） |
 | 前端 `services/app/web` | dev :5173 | Vue 3 + TypeScript + Element Plus + Tailwind CSS 4 |
 
@@ -33,7 +32,6 @@ services/app/
   tests/        单元 + 集成测试
 services/parser/       解析服务
 services/knowledge/    知识库服务
-packages/shared/       公共包
 specs/                 PRD / 技术架构 / 部署 / 8 份功能规格（见下文文档索引）
 evals/                 评测数据（24 份黄金样本 PDF、检索问答集、筛选预期表）
 .agents/skills/        按业务域组织的编码 SOP（4 个技能包）
@@ -49,12 +47,13 @@ cp .env.example .env
 # 编辑 .env：填 PostgreSQL 密码与模型网关 Key（严禁提交到 git）
 ```
 
-模型网关分工（两组凭据）：
+模型网关（全仓库一组凭据）：
 
 | 变量 | 用途 | 说明 |
 |---|---|---|
-| `DASHSCOPE_API_KEY` + `LLM_BASE_URL` + `LLM_MODEL` | 主服务归一化提取（qwen-plus）与招聘 Agent | DashScope 兼容网关 |
-| `MODEL_API_KEY` + `MODEL_BASE_URL` | parser 与 knowledge 共用 | 端点需提供 `OCR_MODEL`（视觉）、`EMBEDDING_MODEL`、`RERANK_MODEL` |
+| `LLM_API_KEY` + `LLM_BASE_URL` | app / parser / knowledge 共用 | 任意 OpenAI 兼容网关，需同时提供下列模型 |
+| `LLM_MODEL`（或 `NORMALIZATION_MODEL` / `AGENT_MODEL`） | 主服务归一化提取与招聘 Agent | 需支持 JSON 输出 |
+| `OCR_MODEL` / `EMBEDDING_MODEL` / `RERANK_MODEL` | parser OCR、knowledge 向量化与重排 | 视觉、embedding、rerank 模型 |
 
 > 培训环境使用金山云 kspmas 网关（见《服务器与大模型配置帮助文档.md》，Key 不要写入任何提交文件）。若网关无视觉模型，扫描件 OCR 将按设计降级进失败列表。
 
@@ -158,12 +157,12 @@ HR 沉淀候选人后自动执行：
 
 ```bash
 docker compose up -d db-test      # 测试库 :55432（tmpfs，重建即清）
+docker compose up -d neo4j-test  # 图服务测试库 :57687（tmpfs，重建即清；测试会全库清空）
 
 uv run pytest services/app/tests -v
 uv run pytest services/parser/tests -v
 uv run pytest services/knowledge/tests -v
-uv run pytest packages/shared/tests -v
-uv run ruff check services packages
+uv run ruff check services
 uv run alembic upgrade head       # 迁移冒烟
 ```
 

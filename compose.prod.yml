@@ -102,8 +102,8 @@ services:
     init: true
 
     environment:
-      MODEL_API_KEY: ${MODEL_API_KEY:-${DASHSCOPE_API_KEY:-}}
-      MODEL_BASE_URL: ${MODEL_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
 
     mem_limit: 1g
 
@@ -130,8 +130,8 @@ services:
     init: true
 
     environment:
-      MODEL_API_KEY: ${MODEL_API_KEY:-${DASHSCOPE_API_KEY:-}}
-      MODEL_BASE_URL: ${MODEL_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-qwen3-embedding-8b}
       RERANK_MODEL: ${RERANK_MODEL:-qwen3-reranker-8b}
       KNOWLEDGE_DATA_DIR: /app/data

@@ -11,15 +11,15 @@ from parser_service.core.config import Settings
 
 class VisionClient:
     def __init__(self, settings: Settings):
-        if not settings.model_api_key:
-            raise RuntimeError("扫描件需要 OCR，但没有配置 MODEL_API_KEY")
+        if not settings.llm_api_key:
+            raise RuntimeError("扫描件需要 OCR，但没有配置 LLM_API_KEY")
         self.model = (
             settings.ocr_model
             if "/" in settings.ocr_model
             else f"openai/{settings.ocr_model}"
         )
-        self.api_key = settings.model_api_key
-        self.api_base = settings.model_base_url.rstrip("/")
+        self.api_key = settings.llm_api_key
+        self.api_base = settings.llm_base_url.rstrip("/")
         self.timeout = settings.ocr_timeout_seconds
 
     def recognize_png(self, png: bytes) -> str:

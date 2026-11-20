@@ -17,8 +17,8 @@ class EmbeddingClient:
             if "/" in settings.embedding_model
             else f"openai/{settings.embedding_model}"
         )
-        self.api_key = settings.model_api_key
-        self.api_base = settings.model_base_url.rstrip("/")
+        self.api_key = settings.llm_api_key
+        self.api_base = settings.llm_base_url.rstrip("/")
         self.timeout = settings.embedding_timeout_seconds
 
     def embed(self, texts: list[str]) -> list[list[float]]:
