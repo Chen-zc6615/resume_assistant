@@ -14,11 +14,11 @@ def _litellm_model(model: str) -> str:
 
 def _completion(*, model: str, timeout: float, **kwargs: Any) -> Any:
     settings = get_settings()
-    if not settings.dashscope_api_key:
-        raise RuntimeError("未配置 DASHSCOPE_API_KEY（.env）")
+    if not settings.llm_api_key:
+        raise RuntimeError("未配置 LLM_API_KEY（.env）")
     return litellm_completion(
         model=_litellm_model(model),
-        api_key=settings.dashscope_api_key,
+        api_key=settings.llm_api_key,
         api_base=settings.llm_base_url.rstrip("/"),
         timeout=timeout,
         num_retries=0,
@@ -39,8 +39,8 @@ def complete_agent(**kwargs: Any) -> Any:
 def get_agent_completion() -> Callable[..., Any]:
     """返回可注入 Agent 循环的模型调用函数，并提前检查配置。"""
     settings = get_settings()
-    if not settings.dashscope_api_key:
-        raise RuntimeError("未配置 DASHSCOPE_API_KEY（.env）")
+    if not settings.llm_api_key:
+        raise RuntimeError("未配置 LLM_API_KEY（.env）")
     return complete_agent
 
 

@@ -27,7 +27,8 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = 10
 
     # --- 本服务的模型任务（底层协议统一由 clients/model_client.py 封装）---
-    dashscope_api_key: str = ""
+    # 按用途命名，不绑定厂商：任何 OpenAI 兼容网关均可（换厂商只改 key + base_url）
+    llm_api_key: str = ""
     llm_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     normalization_model: str = Field(
         default="qwen-plus",

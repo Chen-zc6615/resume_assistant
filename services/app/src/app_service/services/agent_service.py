@@ -361,7 +361,7 @@ def _resolve_completion_fn(completion_fn: Callable[..., Any] | None) -> Callable
         return completion_fn
     try:
         return model_client.get_agent_completion()
-    except RuntimeError as exc:  # 未配置 DASHSCOPE_API_KEY
+    except RuntimeError as exc:  # 未配置 LLM_API_KEY
         raise AgentUnavailableError(str(exc)) from exc
 
 

@@ -11,9 +11,9 @@ resolution-markers = [
 members = [
     "resume-app-service",
     "resume-assistant",
+    "resume-graph-service",
     "resume-knowledge-service",
     "resume-parser-service",
-    "resume-shared",
 ]
 
 [[package]]
@@ -1040,6 +1040,19 @@ wheels = [
 ]
 
 [[package]]
+name = "httpcore2"
+version = "2.16.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "h11" },
+    { name = "truststore" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/31/74/902fb5889cdf87345caacfa286d7dfdca6bd1315c6b32173848b0e4d98dc/httpcore2-2.16.1.tar.gz", hash = "sha256:3daab6418ea53dd0f3de37bb6a5b15d8d334570d9781b9d64bc1fb8b6527a6df", size = 70058, upload-time = "2026-11-16T08:51:41.976Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/01/be/fdafbb964a5e8fa373c66a3037cbe35216cad794ec9370aee72890efe5a7/httpcore2-2.16.1-py3-none-any.whl", hash = "sha256:11f097034886b99d6f5829dde0a0f3bc0169c38935474ce1333bb10b3e4a0093", size = 85548, upload-time = "2026-11-16T08:51:38.763Z" },
+]
+
+[[package]]
 name = "httptools"
 version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1143,6 +1156,32 @@ wheels = [
 [package.optional-dependencies]
 http2 = [
     { name = "h2" },
+]
+
+[[package]]
+name = "httpx2"
+version = "2.16.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio", marker = "sys_platform != 'emscripten'" },
+    { name = "httpcore2", marker = "sys_platform != 'emscripten'" },
+    { name = "httpx2-jsfetch", marker = "sys_platform == 'emscripten'" },
+    { name = "idna" },
+    { name = "truststore", marker = "sys_platform != 'emscripten'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/40/c9/50553244c50e7833e5d19788a9a32dfd19dd53e8738b4795fe8ff82affcb/httpx2-2.16.1.tar.gz", hash = "sha256:a344d3f2f1ee08990f69675d191e3213a25ec4bf1c5be9e6bb1b3960946747bc", size = 103455, upload-time = "2026-11-16T08:51:43.096Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4c/03/f98fa91b1c47dd265e94fe80ca1074cd739f81b97f4d6c532b2d6f05ebf8/httpx2-2.16.1-py3-none-any.whl", hash = "sha256:29e8566f8ab355075e7590643e04756361fcdb7d5f2be4d9cb959bde7d33d215", size = 98070, upload-time = "2026-11-16T08:51:40.288Z" },
+]
+
+[[package]]
+name = "httpx2-jsfetch"
+version = "1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/cd/c4/0e5636363151a2a1795e0a77617168b9ca438e1748ec05fc9b5687f93d64/httpx2_jsfetch-1.0.tar.gz", hash = "sha256:70a0e3eabfef7cce5ad9c629f7d01ca05e418f586646f4ddf14782e4c1454c60", size = 6872, upload-time = "2026-08-07T00:13:07.492Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9b/43/832f631d32e4f1211caa2ba368317739fe71f0b8530e4c9d15dc454bac2a/httpx2_jsfetch-1.0-py3-none-any.whl", hash = "sha256:cb916b707601e69a07721aabc8f3f6659be3a6893bc1ff5c6f9e02241df2da32", size = 6382, upload-time = "2026-08-07T00:13:06.567Z" },
 ]
 
 [[package]]
@@ -1834,6 +1873,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/ce/2efa1f32a07adfe041d48c6d04c08b6f9db66b8512c765983172399b2855/multidict-7.1.0-cp315-cp315t-win_amd64.whl", hash = "sha256:55392202cb374dd1a1f89a8ce1586644870d9e936752059d053e576acc50bc89", size = 99671, upload-time = "2026-10-09T20:31:31.282Z" },
     { url = "https://files.pythonhosted.org/packages/a9/b3/a44c301fe13716c5f2c08afd89a481018988cde4b337b36e28a2b0fcf3a3/multidict-7.1.0-cp315-cp315t-win_arm64.whl", hash = "sha256:f979a077d1c0a9a36dd4fab0d3a36b8de7b593bf935e13df85a380395b2c11ad", size = 98893, upload-time = "2026-10-09T20:31:33.62Z" },
     { url = "https://files.pythonhosted.org/packages/d0/86/a3de309c5e28ee85b314d0e3ba0e0dea6fd361c313322a05e67be4656e1e/multidict-7.1.0-py3-none-any.whl", hash = "sha256:d9ef29cfd98e17085b4f91bba8fa1570bec6787d5c52ce653ed33a58785585d0", size = 28087, upload-time = "2026-10-09T20:31:35.945Z" },
+]
+
+[[package]]
+name = "neo4j"
+version = "6.4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytz" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d1/d1/bc40a291c60b06738ce92d5f0259d348eee1f07ba10d569a881c848c8afe/neo4j-6.4.1.tar.gz", hash = "sha256:fac99b7cb9679b93ef97dc23f22a3f0e7c3feb2db223eddfd2521f27005cfeaf", size = 287897, upload-time = "2026-10-15T10:47:26.666Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/69/3036bdcacfba561c6ef4b00fe72529e0a1b6241a6b2de82572a0940a276b/neo4j-6.4.1-py3-none-any.whl", hash = "sha256:f56a281c74355522fc2642df8919bec450115431531b8f3f6fe1cc17acb57a27", size = 390684, upload-time = "2026-10-15T10:47:25.236Z" },
 ]
 
 [[package]]
@@ -3177,7 +3228,6 @@ dependencies = [
     { name = "pymupdf" },
     { name = "python-multipart" },
     { name = "rapidfuzz" },
-    { name = "resume-shared" },
     { name = "sqlalchemy" },
     { name = "sqlglot" },
     { name = "uvicorn", extra = ["standard"] },
@@ -3199,7 +3249,6 @@ requires-dist = [
     { name = "pymupdf", specifier = ">=1.24" },
     { name = "python-multipart", specifier = ">=0.0.9" },
     { name = "rapidfuzz", specifier = ">=3.9" },
-    { name = "resume-shared", editable = "packages/shared" },
     { name = "sqlalchemy", specifier = ">=2.0" },
     { name = "sqlglot", specifier = ">=26.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
@@ -3219,6 +3268,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "httpx2" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
@@ -3235,9 +3285,31 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "httpx2", specifier = ">=2.0" },
     { name = "pytest", specifier = ">=8.2" },
     { name = "pytest-asyncio", specifier = ">=0.23" },
     { name = "ruff", specifier = ">=0.5" },
+]
+
+[[package]]
+name = "resume-graph-service"
+version = "0.1.0"
+source = { editable = "services/graph" }
+dependencies = [
+    { name = "fastapi" },
+    { name = "neo4j" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", specifier = ">=0.115" },
+    { name = "neo4j", specifier = ">=5.26" },
+    { name = "pydantic", specifier = ">=2.7" },
+    { name = "pydantic-settings", specifier = ">=2.3" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
 ]
 
 [[package]]
@@ -3285,7 +3357,6 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pymupdf" },
     { name = "python-multipart" },
-    { name = "resume-shared" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -3298,20 +3369,8 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.3" },
     { name = "pymupdf", specifier = ">=1.24" },
     { name = "python-multipart", specifier = ">=0.0.9" },
-    { name = "resume-shared", editable = "packages/shared" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
 ]
-
-[[package]]
-name = "resume-shared"
-version = "0.1.0"
-source = { editable = "packages/shared" }
-dependencies = [
-    { name = "pymupdf" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "pymupdf", specifier = ">=1.24" }]
 
 [[package]]
 name = "rich"
@@ -3699,6 +3758,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/0d/ea/b2a5bd54b28a324dae8211928b2d730b6547500342c7e6c6dea08bd0a485/tqdm-4.70.1.tar.gz", hash = "sha256:cefd0eca11b2a37a3aee776544d4f4ae913f02688135b5556b8788dfa474afc4", size = 171846, upload-time = "2026-09-11T07:25:16.601Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl", hash = "sha256:c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73", size = 80199, upload-time = "2026-09-11T07:25:14.599Z" },
+]
+
+[[package]]
+name = "truststore"
+version = "0.10.5"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ee/9f/c5201d42a484c061e528825fc8e2d565f5abd50a4ced6fb7d29c4ec99b2b/truststore-0.10.5.tar.gz", hash = "sha256:30d36967ccaded5cbb38d602c433f53600036c79d502f4533a49b60a03bbefcd", size = 28091, upload-time = "2026-10-12T22:27:31.808Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/51/e9/3a7820be2bb0fe53b6bc9c3be26d3d1158004e4c3ab953aa6840b955b1e9/truststore-0.10.5-py3-none-any.whl", hash = "sha256:9aaaedaefaf06d8b206278cf8b5012bc897f485a874503501e12d776df78951c", size = 19017, upload-time = "2026-10-12T22:27:30.377Z" },
 ]
 
 [[package]]

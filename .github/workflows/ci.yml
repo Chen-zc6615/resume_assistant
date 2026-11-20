@@ -55,7 +55,7 @@ jobs:
         run: uv sync --all-packages --frozen
 
       - name: Check backend style
-        run: uv run ruff check services packages
+        run: uv run ruff check services
 
       - name: Apply database migrations
         run: uv run alembic upgrade head

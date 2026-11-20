@@ -34,6 +34,51 @@ services:
       timeout: 5s
       retries: 5
 
+  # 知识图谱存储：简历·岗位技能图谱（graph 服务专用）
+  neo4j:
+    image: neo4j:5.26-community
+    container_name: resume-assistant-neo4j
+    restart: unless-stopped
+    environment:
+      # 初始管理员账号必须叫 neo4j；仅首次初始化数据卷时生效
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:?请在 .env 设置 NEO4J_PASSWORD}
+      # 限制内存占用（约 1.5G），避免 JVM 按整机内存自动分配
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 1g
+      NEO4J_server_memory_pagecache_size: 512m
+    ports:
+      - "127.0.0.1:7474:7474"   # 浏览器管理界面
+      - "127.0.0.1:7687:7687"   # bolt 连接端口（代码用这个）
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # 图服务集成测试专用 Neo4j：数据放 tmpfs，重建即清；测试会全库清空，严禁指向 neo4j 主库
+  # 社区版只有单库无法按库名隔离，所以用独立容器 + 独立端口（与 db-test 同一思路）
+  neo4j-test:
+    image: neo4j:5.26-community
+    container_name: resume-assistant-neo4j-test
+    environment:
+      NEO4J_AUTH: neo4j/test-password-123
+      NEO4J_server_memory_heap_initial__size: 256m
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 128m
+    ports:
+      - "127.0.0.1:57687:7687"
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:7474 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
   # 主服务：业务主线纯 API；前端独立部署（web 服务）
   app:
     build:
@@ -45,7 +90,7 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       PARSER_SERVICE_BASE_URL: http://parser:8002
       KNOWLEDGE_SERVICE_BASE_URL: http://knowledge:8001
-      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
       # 容器内无 .env，须显式传入归一化/Agent 模型端点，否则回退官方地址
       LLM_BASE_URL: ${LLM_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
       LLM_MODEL: ${LLM_MODEL:-qwen-plus}
@@ -96,8 +141,8 @@ services:
     container_name: resume-assistant-parser
     restart: unless-stopped
     environment:
-      MODEL_API_KEY: ${MODEL_API_KEY:-${DASHSCOPE_API_KEY:-}}
-      MODEL_BASE_URL: ${MODEL_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
       OCR_MODEL: ${OCR_MODEL:-qwen-vl-max}
     ports:
       - "127.0.0.1:8002:8002"
@@ -116,8 +161,8 @@ services:
     container_name: resume-assistant-knowledge
     restart: unless-stopped
     environment:
-      MODEL_API_KEY: ${MODEL_API_KEY:-${DASHSCOPE_API_KEY:-}}
-      MODEL_BASE_URL: ${MODEL_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-qwen3-embedding-8b}
       RERANK_MODEL: ${RERANK_MODEL:-qwen3-reranker-8b}
       KNOWLEDGE_DATA_DIR: /app/data
@@ -137,3 +182,4 @@ services:
 volumes:
   postgres_data:
   knowledge_data:
+  neo4j_data:

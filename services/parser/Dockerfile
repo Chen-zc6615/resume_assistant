@@ -11,10 +11,8 @@ COPY pyproject.toml uv.lock ./
 COPY services/app/pyproject.toml ./services/app/pyproject.toml
 COPY services/parser/pyproject.toml ./services/parser/pyproject.toml
 COPY services/knowledge/pyproject.toml ./services/knowledge/pyproject.toml
-COPY packages/shared/pyproject.toml ./packages/shared/pyproject.toml
 
-# 本服务与共享包源码
-COPY packages/shared/src ./packages/shared/src
+# 本服务源码
 COPY services/parser/src ./services/parser/src
 
 RUN uv sync --frozen --no-dev --package resume-parser-service
