@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     neo4j_database: str = "neo4j"
     neo4j_connection_timeout_seconds: float = Field(default=5.0, gt=0)
 
+    llm_api_key: str = ""
+    llm_base_url: str = ""
+    graph_llm_model: str = ""
+    graph_llm_timeout_seconds: float = Field(default=60.0, gt=0)
+    graph_extract_max_retries: int = Field(default=1, ge=0, le=5)
+
 
 @lru_cache
 def get_settings() -> Settings:

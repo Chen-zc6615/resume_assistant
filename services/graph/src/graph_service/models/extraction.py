@@ -16,8 +16,12 @@ RELATION_TAIL: dict[str, TailType] = {
 # 防止 LLM 输出空串、纯空格或超长的整段文字当作实体名
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 
-# 原句：简历中支撑某条关系的原文，与"名称"是两回事，上限单独管理（目前仍为 100，见待办）
-Snippet = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+# 原句：简历中支撑某条关系的原文，与"名称"是两回事，上限单独管理
+# 抽取提示词与此处校验共用同一个数字，改这里提示词会自动跟着变
+SNIPPET_MAX_LENGTH = 100
+Snippet = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=SNIPPET_MAX_LENGTH)
+]
 
 # 简历 ID：与主库 resumes.resume_id、卡片契约 source_resume_id 同一口径（正整数）
 ResumeId = Annotated[int, Field(gt=0)]
